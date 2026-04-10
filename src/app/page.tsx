@@ -10,25 +10,26 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkoutForm } from "@/components/workout-form";
 import { WorkoutList } from "@/components/workout-list";
 import { PFCSummary } from "@/components/pfc-summary";
-import type { WorkoutEntry } from "@/lib/types";
+import type { WorkoutEntry, MealEntry } from "@/lib/types";
 import { Plus, Dumbbell } from "lucide-react";
 
 export default function Home() {
   const [workouts, setWorkouts] = useState<WorkoutEntry[]>([]);
+  const [meals, setMeals] = useState<MealEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
-  const today = new Date().toISOString().split("T")[0];
-
   useEffect(() => {
-    fetch("/api/workouts")
-      .then((r) => r.json())
-      .then((data: WorkoutEntry[]) => setWorkouts(data))
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/workouts").then((r) => r.json()),
+      fetch("/api/meals").then((r) => r.json()),
+    ]).then(([workoutData, mealData]: [WorkoutEntry[], MealEntry[]]) => {
+      setWorkouts(workoutData);
+      setMeals(mealData);
+    }).finally(() => setLoading(false));
   }, []);
 
   function handleAdd(entry: WorkoutEntry) {
@@ -46,7 +47,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
       <header className="border-b bg-card">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -68,53 +68,24 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main */}
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-6">
-        {/* PFC summary cards */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <PFCSummary workouts={workouts} date={today} />
-          <PFCSummary workouts={workouts} />
-        </div>
+        <PFCSummary meals={meals} />
 
         <Separator />
 
-        {/* Workout list tabs */}
-        <Tabs defaultValue="all">
-          <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="all">すべて</TabsTrigger>
-              <TabsTrigger value="today">今日</TabsTrigger>
-            </TabsList>
-            <p className="text-xs text-muted-foreground">
-              {workouts.length} 件の記録
-            </p>
-          </div>
-
-          <TabsContent value="all" className="mt-4">
-            <WorkoutList
-              workouts={workouts}
-              loading={loading}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-            />
-          </TabsContent>
-
-          <TabsContent value="today" className="mt-4">
-            <WorkoutList
-              workouts={workouts.filter((w) => w.date === today)}
-              loading={loading}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-            />
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      <footer className="border-t mt-auto">
-        <div className="max-w-5xl mx-auto px-4 py-3 text-xs text-muted-foreground text-center">
-          Powered by Next.js + Notion + Vercel
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium">筋トレ記録</h2>
+          <p className="text-xs text-muted-foreground">{workouts.length} 件</p>
         </div>
-      </footer>
+
+        <WorkoutList
+          workouts={workouts}
+          loading={loading}
+          paginate
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
+        />
+      </main>
     </div>
   );
 }

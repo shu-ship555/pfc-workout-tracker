@@ -1,21 +1,27 @@
 export type WorkoutEntry = {
   id: string;
-  date: string;
+  created: string;
+  parts: string;
   exercise: string;
-  sets: number;
-  reps: number;
+  set: number;
+  rep: number;
   weight: number;
-  protein: number;
-  fat: number;
-  carbs: number;
-  notes: string;
+  goal: number;
+  memo: string;
+  negative: boolean;
+  warmup: boolean;
+  hasRebound: boolean;
+  notStable: boolean;
 };
 
-export type PFCSummary = {
+export type WorkoutFormData = Omit<WorkoutEntry, "id" | "created">;
+
+export type MealEntry = {
+  id: string;
+  date: string;
+  name: string;
+  kcal: number;
   protein: number;
   fat: number;
-  carbs: number;
-  calories: number;
+  carb: number;
 };
-
-export type WorkoutFormData = Omit<WorkoutEntry, "id">;

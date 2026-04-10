@@ -4,8 +4,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { WorkoutEntry, WorkoutFormData } from "@/lib/types";
 
 type Props = {
@@ -14,34 +20,67 @@ type Props = {
   onCancel?: () => void;
 };
 
+type Part = "胸" | "腕" | "背中" | "脚";
+
+const PARTS: Part[] = ["胸", "腕", "背中", "脚"];
+
+const EXERCISES: Record<Part, string[]> = {
+  胸: ["ベンチプレス", "インクラインベンチプレス", "ダンベルフライ", "ペックデックフライ", "ディップス", "チェストプレス"],
+  腕: ["バイセップカール", "ハンマーカール", "プリーチャーカール", "スカルクラッシャー", "トライセップスプレッドバー", "ケーブルカール"],
+  背中: ["ラットプルダウン", "ベントオーバーロウ", "シーテッドロウ", "デッドリフト", "懸垂（チンアップ）", "アームカール", "フェイスプル"],
+  脚: ["スクワット", "レッグプレス", "レッグカール", "レッグエクステンション", "ランジ", "カーフレイズ", "ルーマニアンデッドリフト"],
+};
+
 const defaultForm: WorkoutFormData = {
-  date: new Date().toISOString().split("T")[0],
+  parts: "",
   exercise: "",
-  sets: 3,
-  reps: 10,
+  set: 3,
+  rep: 10,
   weight: 0,
-  protein: 0,
-  fat: 0,
-  carbs: 0,
-  notes: "",
+  goal: 0,
+  memo: "",
+  negative: false,
+  warmup: false,
+  hasRebound: false,
+  notStable: false,
 };
 
 export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
   const [form, setForm] = useState<WorkoutFormData>(
-    initial ? { ...initial } : defaultForm
+    initial
+      ? {
+          parts: initial.parts,
+          exercise: initial.exercise,
+          set: initial.set,
+          rep: initial.rep,
+          weight: initial.weight,
+          goal: initial.goal,
+          memo: initial.memo,
+          negative: initial.negative,
+          warmup: initial.warmup,
+          hasRebound: initial.hasRebound,
+          notStable: initial.notStable,
+        }
+      : defaultForm
   );
   const [loading, setLoading] = useState(false);
 
-  const set = (key: keyof WorkoutFormData, value: string | number) =>
+  const setField = <K extends keyof WorkoutFormData>(key: K, value: WorkoutFormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handlePartsChange(value: string | null) {
+    setForm((prev) => ({ ...prev, parts: value ?? "", exercise: "" }));
+  }
+
+  const exercises = form.parts && form.parts in EXERCISES
+    ? EXERCISES[form.parts as Part]
+    : [];
+
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     try {
-      const url = initial
-        ? `/api/workouts/${initial.id}`
-        : "/api/workouts";
+      const url = initial ? `/api/workouts/${initial.id}` : "/api/workouts";
       const method = initial ? "PUT" : "POST";
       const res = await fetch(url, {
         method,
@@ -59,48 +98,60 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
   return (
     <form onSubmit={handleSubmit}>
       <div className="space-y-4">
+        {/* 部位・種目 */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <Label htmlFor="date">日付</Label>
-            <Input
-              id="date"
-              type="date"
-              value={form.date}
-              onChange={(e) => set("date", e.target.value)}
-              required
-            />
+            <Label>部位</Label>
+            <Select value={form.parts} onValueChange={handlePartsChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="選択してください" />
+              </SelectTrigger>
+              <SelectContent>
+                {PARTS.map((p) => (
+                  <SelectItem key={p} value={p}>{p}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="exercise">種目</Label>
-            <Input
-              id="exercise"
-              placeholder="例: ベンチプレス"
+            <Label>種目</Label>
+            <Select
               value={form.exercise}
-              onChange={(e) => set("exercise", e.target.value)}
-              required
-            />
+              onValueChange={(v) => setField("exercise", v ?? "")}
+              disabled={!form.parts}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={form.parts ? "選択してください" : "部位を先に選択"} />
+              </SelectTrigger>
+              <SelectContent>
+                {exercises.map((ex) => (
+                  <SelectItem key={ex} value={ex}>{ex}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        {/* セット・レップ・重量・目標 */}
+        <div className="grid grid-cols-4 gap-3">
           <div className="space-y-1">
-            <Label htmlFor="sets">セット数</Label>
+            <Label htmlFor="set">セット</Label>
             <Input
-              id="sets"
+              id="set"
               type="number"
               min={1}
-              value={form.sets}
-              onChange={(e) => set("sets", Number(e.target.value))}
+              value={form.set}
+              onChange={(e) => setField("set", Number(e.target.value))}
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="reps">レップ数</Label>
+            <Label htmlFor="rep">レップ</Label>
             <Input
-              id="reps"
+              id="rep"
               type="number"
               min={1}
-              value={form.reps}
-              onChange={(e) => set("reps", Number(e.target.value))}
+              value={form.rep}
+              onChange={(e) => setField("rep", Number(e.target.value))}
             />
           </div>
           <div className="space-y-1">
@@ -111,58 +162,53 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
               min={0}
               step={0.5}
               value={form.weight}
-              onChange={(e) => set("weight", Number(e.target.value))}
-            />
-          </div>
-        </div>
-
-        <Separator />
-
-        <p className="text-sm font-medium text-muted-foreground">栄養摂取量</p>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <Label htmlFor="protein">P タンパク質 (g)</Label>
-            <Input
-              id="protein"
-              type="number"
-              min={0}
-              step={0.1}
-              value={form.protein}
-              onChange={(e) => set("protein", Number(e.target.value))}
+              onChange={(e) => setField("weight", Number(e.target.value))}
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="fat">F 脂質 (g)</Label>
+            <Label htmlFor="goal">目標 (kg)</Label>
             <Input
-              id="fat"
+              id="goal"
               type="number"
               min={0}
-              step={0.1}
-              value={form.fat}
-              onChange={(e) => set("fat", Number(e.target.value))}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="carbs">C 炭水化物 (g)</Label>
-            <Input
-              id="carbs"
-              type="number"
-              min={0}
-              step={0.1}
-              value={form.carbs}
-              onChange={(e) => set("carbs", Number(e.target.value))}
+              step={0.5}
+              value={form.goal}
+              onChange={(e) => setField("goal", Number(e.target.value))}
             />
           </div>
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="notes">メモ</Label>
+          <Label htmlFor="memo">メモ</Label>
           <Input
-            id="notes"
+            id="memo"
             placeholder="任意のメモ"
-            value={form.notes}
-            onChange={(e) => set("notes", e.target.value)}
+            value={form.memo}
+            onChange={(e) => setField("memo", e.target.value)}
           />
+        </div>
+
+        <Separator />
+
+        <div className="grid grid-cols-2 gap-2">
+          {(
+            [
+              { key: "warmup",    label: "ウォームアップ" },
+              { key: "negative",  label: "ネガティブ" },
+              { key: "hasRebound", label: "反動有り" },
+              { key: "notStable", label: "静止できていない" },
+            ] as const
+          ).map(({ key, label }) => (
+            <label key={key} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={form[key]}
+                onChange={(e) => setField(key, e.target.checked)}
+                className="h-4 w-4 rounded border-input accent-primary"
+              />
+              {label}
+            </label>
+          ))}
         </div>
 
         <div className="flex gap-2 justify-end">
@@ -171,7 +217,7 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
               キャンセル
             </Button>
           )}
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading || !form.exercise}>
             {loading ? "保存中..." : initial ? "更新" : "追加"}
           </Button>
         </div>

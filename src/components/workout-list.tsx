@@ -25,6 +25,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,17 +39,66 @@ import { WorkoutForm } from "@/components/workout-form";
 import type { WorkoutEntry } from "@/lib/types";
 import { Pencil, Trash2 } from "lucide-react";
 
+const DAYS_PER_PAGE = 28; // 4週間
+
+/** page=1 → 直近28日、page=2 → その前28日、... */
+function getPageWindow(page: number): { from: Date; to: Date } {
+  const now = new Date();
+  const to = new Date(now);
+  to.setDate(to.getDate() - (page - 1) * DAYS_PER_PAGE);
+  const from = new Date(now);
+  from.setDate(from.getDate() - page * DAYS_PER_PAGE);
+  return { from, to };
+}
+
+function calcTotalPages(workouts: WorkoutEntry[]): number {
+  if (workouts.length === 0) return 1;
+  const oldest = new Date(workouts[workouts.length - 1].created);
+  const diffDays = Math.ceil((Date.now() - oldest.getTime()) / 86400000);
+  return Math.max(1, Math.ceil(diffDays / DAYS_PER_PAGE));
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("ja-JP", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatWindowLabel(page: number): string {
+  const { from, to } = getPageWindow(page);
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
+  return `${fmt(from)} 〜 ${fmt(to)}`;
+}
+
 type Props = {
   workouts: WorkoutEntry[];
   loading: boolean;
+  paginate?: boolean;
   onUpdate: (entry: WorkoutEntry) => void;
   onDelete: (id: string) => void;
 };
 
-export function WorkoutList({ workouts, loading, onUpdate, onDelete }: Props) {
+export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onDelete }: Props) {
+  const [page, setPage] = useState(1);
   const [editTarget, setEditTarget] = useState<WorkoutEntry | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<WorkoutEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const totalPages = paginate ? calcTotalPages(workouts) : 1;
+
+  const displayed = paginate
+    ? (() => {
+        const { from, to } = getPageWindow(page);
+        return workouts.filter((w) => {
+          const d = new Date(w.created);
+          return d >= from && d < to;
+        });
+      })()
+    : workouts;
 
   async function confirmDelete() {
     if (!deleteTarget) return;
@@ -74,68 +130,118 @@ export function WorkoutList({ workouts, loading, onUpdate, onDelete }: Props) {
 
   return (
     <>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>日付</TableHead>
-              <TableHead>種目</TableHead>
-              <TableHead className="text-right">セット</TableHead>
-              <TableHead className="text-right">レップ</TableHead>
-              <TableHead className="text-right">重量</TableHead>
-              <TableHead className="text-right">P</TableHead>
-              <TableHead className="text-right">F</TableHead>
-              <TableHead className="text-right">C</TableHead>
-              <TableHead className="w-[80px]" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {workouts.map((w) => (
-              <TableRow key={w.id}>
-                <TableCell className="font-mono text-xs text-muted-foreground">{w.date}</TableCell>
-                <TableCell className="font-medium">{w.exercise}</TableCell>
-                <TableCell className="text-right">{w.sets}</TableCell>
-                <TableCell className="text-right">{w.reps}</TableCell>
-                <TableCell className="text-right">
-                  <span className="font-mono">{w.weight}</span>
-                  <span className="text-xs text-muted-foreground ml-0.5">kg</span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Badge variant="secondary" className="font-mono text-blue-600 dark:text-blue-400">{w.protein}g</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Badge variant="secondary" className="font-mono text-yellow-600 dark:text-yellow-400">{w.fat}g</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Badge variant="secondary" className="font-mono text-green-600 dark:text-green-400">{w.carbs}g</Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      onClick={() => setEditTarget(w)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 text-destructive hover:text-destructive"
-                      onClick={() => setDeleteTarget(w)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {paginate && (
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs text-muted-foreground">{formatWindowLabel(page)}</p>
+          <Pagination className="w-auto mx-0">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  text="新しい期間"
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); setPage((p) => Math.max(1, p - 1)); }}
+                  aria-disabled={page === 1}
+                  className={page === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              <PaginationItem>
+                <span className="text-xs px-2 text-muted-foreground tabular-nums">
+                  {page} / {totalPages}
+                </span>
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext
+                  text="古い期間"
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); setPage((p) => Math.min(totalPages, p + 1)); }}
+                  aria-disabled={page === totalPages}
+                  className={page === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
-      {/* Edit dialog */}
+      {displayed.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border rounded-md">
+          <p className="text-sm">この期間の記録はありません</p>
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>日時</TableHead>
+                <TableHead>部位</TableHead>
+                <TableHead>種目</TableHead>
+                <TableHead className="text-right">セット</TableHead>
+                <TableHead className="text-right">レップ</TableHead>
+                <TableHead className="text-right">重量</TableHead>
+                <TableHead className="text-right">目標</TableHead>
+                <TableHead>フラグ</TableHead>
+                <TableHead className="w-20" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {displayed.map((w) => (
+                <TableRow key={w.id}>
+                  <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+                    {formatDate(w.created)}
+                  </TableCell>
+                  <TableCell>
+                    {w.parts && <Badge variant="secondary">{w.parts}</Badge>}
+                  </TableCell>
+                  <TableCell className="font-medium">{w.exercise}</TableCell>
+                  <TableCell className="text-right">{w.set}</TableCell>
+                  <TableCell className="text-right">{w.rep}</TableCell>
+                  <TableCell className="text-right">
+                    <span className="font-mono">{w.weight}</span>
+                    <span className="text-xs text-muted-foreground ml-0.5">kg</span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {w.goal > 0 && (
+                      <>
+                        <span className="font-mono">{w.goal}</span>
+                        <span className="text-xs text-muted-foreground ml-0.5">kg</span>
+                      </>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1 flex-wrap">
+                      {w.warmup && <Badge variant="outline" className="text-xs">WU</Badge>}
+                      {w.negative && <Badge variant="outline" className="text-xs">NEG</Badge>}
+                      {w.hasRebound && <Badge variant="outline" className="text-xs text-yellow-600">反動</Badge>}
+                      {w.notStable && <Badge variant="outline" className="text-xs text-red-500">不安定</Badge>}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => setEditTarget(w)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => setDeleteTarget(w)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
       <Dialog open={!!editTarget} onOpenChange={(o) => !o && setEditTarget(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -154,13 +260,12 @@ export function WorkoutList({ workouts, loading, onUpdate, onDelete }: Props) {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirm */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>記録を削除しますか？</AlertDialogTitle>
             <AlertDialogDescription>
-              「{deleteTarget?.exercise}」({deleteTarget?.date}) の記録を削除します。この操作は取り消せません。
+              「{deleteTarget?.exercise}」の記録を削除します。この操作は取り消せません。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
