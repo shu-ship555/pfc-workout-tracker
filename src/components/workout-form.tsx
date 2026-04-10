@@ -26,7 +26,7 @@ const PARTS: Part[] = ["胸", "腕", "背中", "脚"];
 
 const EXERCISES: Record<Part, string[]> = {
   胸: ["ベンチプレス", "インクラインベンチプレス", "ダンベルフライ", "ペックデックフライ", "ディップス", "チェストプレス"],
-  腕: ["バイセップカール", "ハンマーカール", "プリーチャーカール", "スカルクラッシャー", "トライセップスプレッドバー", "ケーブルカール"],
+  腕: ["アームカール", "バイセップカール", "ハンマーカール", "プリーチャーカール", "スカルクラッシャー", "トライセップスプレッドバー", "ケーブルカール"],
   背中: ["ラットプルダウン", "ベントオーバーロウ", "シーテッドロウ", "デッドリフト", "懸垂（チンアップ）", "アームカール", "フェイスプル"],
   脚: ["スクワット", "レッグプレス", "レッグカール", "レッグエクステンション", "ランジ", "カーフレイズ", "ルーマニアンデッドリフト"],
 };
@@ -49,18 +49,18 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
   const [form, setForm] = useState<WorkoutFormData>(
     initial
       ? {
-          parts: initial.parts,
-          exercise: initial.exercise,
-          set: initial.set,
-          rep: initial.rep,
-          weight: initial.weight,
-          goal: initial.goal,
-          memo: initial.memo,
-          negative: initial.negative,
-          warmup: initial.warmup,
-          hasRebound: initial.hasRebound,
-          notStable: initial.notStable,
-        }
+        parts: initial.parts,
+        exercise: initial.exercise,
+        set: initial.set,
+        rep: initial.rep,
+        weight: initial.weight,
+        goal: initial.goal,
+        memo: initial.memo,
+        negative: initial.negative,
+        warmup: initial.warmup,
+        hasRebound: initial.hasRebound,
+        notStable: initial.notStable,
+      }
       : defaultForm
   );
   const [loading, setLoading] = useState(false);
@@ -193,8 +193,8 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
         <div className="grid grid-cols-2 gap-2">
           {(
             [
-              { key: "warmup",    label: "ウォームアップ" },
-              { key: "negative",  label: "ネガティブ" },
+              { key: "warmup", label: "ウォームアップ" },
+              { key: "negative", label: "ネガティブ" },
               { key: "hasRebound", label: "反動有り" },
               { key: "notStable", label: "静止できていない" },
             ] as const

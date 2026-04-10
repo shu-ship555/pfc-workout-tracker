@@ -12,6 +12,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { WorkoutForm } from "@/components/workout-form";
 import { WorkoutList } from "@/components/workout-list";
+import { WorkoutChart } from "@/components/workout-chart";
 import { PFCSummary } from "@/components/pfc-summary";
 import type { WorkoutEntry, MealEntry } from "@/lib/types";
 import { Plus, Dumbbell } from "lucide-react";
@@ -70,6 +71,8 @@ export default function Home() {
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-6">
         <PFCSummary meals={meals} />
+
+        <WorkoutChart workouts={workouts} />
 
         <Separator />
 
