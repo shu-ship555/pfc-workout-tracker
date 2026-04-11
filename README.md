@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PFC Workout Tracker
 
-## Getting Started
+筋トレの記録と食事のPFC（タンパク質・脂質・炭水化物）を一元管理するWebアプリ。
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🎯 プロジェクトの目的
+
+筋トレの重量推移を可視化しながら、食事の栄養バランスを同時に管理するために開発。
+
+- 毎回のセット・レップ・重量を素早く記録する
+- 種目ごとの重量推移をチャートで確認し、成長を実感する
+- PFC（タンパク質・脂質・炭水化物）をNotionの食事DBと連携して集計する
+
+---
+
+## 🛠 技術スタック
+
+| カテゴリ | 技術 |
+|---|---|
+| フレームワーク | Next.js (App Router) |
+| 言語 | TypeScript |
+| スタイリング | Tailwind CSS |
+| UIコンポーネント | shadcn/ui |
+| チャート | Recharts |
+| データストア | Notion API |
+| デプロイ | Vercel |
+
+---
+
+## 🏗 設計のこだわり
+
+**Notionをデータベースとして活用**
+サーバーレスAPIからNotionのデータベースを直接読み書きする構成。専用DBを立てず、既存のNotionワークスペースにデータを集約できる。
+
+**チャートのY軸を動的に調整**
+種目ごとの重量レンジに合わせてY軸の表示範囲を自動計算（振れ幅の50%または最低2.5kgを余白として確保）。どの種目でも線グラフが常にチャート中央付近に表示される。
+
+**日付処理をJST基準に統一**
+`toISOString()`（UTC）ではなくJST（UTC+9）ベースで日付を扱い、深夜0時に「今日」と「前日」が正しく切り替わるよう対応。
+
+**ページネーションで2週間単位の閲覧**
+記録が増えても見やすいよう、2週間ごとのウィンドウでページングし、日時・部位・種目でのフィルタリングにも対応。
+
+---
+
+## 🚀 開発の始め方
+
+### 必要な環境変数
+
+`.env.local` に以下を設定する。
+
+```
+NOTION_API_KEY=your_notion_integration_token
+NOTION_WORKOUT_DATABASE_ID=your_workout_db_id
+NOTION_FOOD_DATABASE_ID=your_food_db_id
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Notion DBのスキーマ
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Workout DB**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| プロパティ名 | 型 |
+|---|---|
+| Memo | タイトル |
+| Parts | セレクト |
+| Exercise | セレクト |
+| Set | 数値 |
+| Rep | 数値 |
+| Weight | 数値 |
+| Goal | 数値 |
+| Negative | チェックボックス |
+| Warmup | チェックボックス |
+| hasRebound | チェックボックス |
+| notStable | チェックボックス |
 
-## Learn More
+**Food DB**
 
-To learn more about Next.js, take a look at the following resources:
+| プロパティ名 | 型 |
+|---|---|
+| Name | タイトル |
+| Date | 日付 |
+| Kcal | 数値 |
+| Protein | 数値 |
+| Fat | 数値 |
+| Carb | 数値 |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 起動
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm install
+npm run dev
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[http://localhost:3000](http://localhost:3000) で動作を確認できる。
