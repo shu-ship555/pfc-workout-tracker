@@ -69,12 +69,32 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-6">
+      {/* SP: 画面下部固定バー / PC: 右下FAB */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 sm:bottom-6 sm:left-auto sm:right-6 sm:w-auto">
+        <div className="sm:hidden border-t bg-card px-4 py-3">
+          <Button className="w-full" onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            記録を追加
+          </Button>
+        </div>
+        <Button
+          size="lg"
+          className="hidden sm:flex items-center gap-1 shadow-lg rounded-full px-6"
+          onClick={() => setOpen(true)}
+        >
+          <Plus className="h-5 w-5" />
+          記録を追加
+        </Button>
+      </div>
+
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-6 pb-24 sm:pb-6">
         <PFCSummary meals={meals} />
+
+        <Separator className="my-12" />
 
         <WorkoutChart workouts={workouts} />
 
-        <Separator />
+        <Separator className="my-12" />
 
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium">筋トレ記録</h2>

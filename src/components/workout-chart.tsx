@@ -16,6 +16,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
 import type { WorkoutEntry } from "@/lib/types";
@@ -26,7 +27,7 @@ const PARTS: Part[] = ["胸", "腕", "背中", "脚"];
 
 const EXERCISES: Record<Part, string[]> = {
   胸: ["ベンチプレス", "インクラインベンチプレス", "ダンベルフライ", "ペックデックフライ", "ディップス", "チェストプレス"],
-  腕: ["アームカール", "バイセップカール", "ハンマーカール", "プリーチャーカール", "スカルクラッシャー", "トライセップスプレッドバー", "ケーブルカール"],
+  腕: ["アームカール", "バイセップカール", "ハンマーカール", "プリーチャーカール", "スカルクラッシャー", "ライイング・トリセプス・エクステンション", "ケーブルカール"],
   背中: ["ラットプルダウン", "ベントオーバーロウ", "シーテッドロウ", "デッドリフト", "懸垂（チンアップ）", "アームカール", "フェイスプル"],
   脚: ["スクワット", "レッグプレス", "レッグカール", "レッグエクステンション", "ランジ", "カーフレイズ", "ルーマニアンデッドリフト"],
 };
@@ -50,12 +51,20 @@ export function WorkoutChart({ workouts }: Props) {
     setExercise(EXERCISES[next][0]);
   }
 
-  const { chartData, yDomain } = useMemo(() => {
-    if (!exercise) return { chartData: [], yDomain: [0, 100] as [number, number] };
+  const { chartData, yDomain, goalWeight } = useMemo(() => {
+    if (!exercise) return { chartData: [], yDomain: [0, 100] as [number, number], goalWeight: 0 };
     // key = ISO日付 (YYYY-MM-DD) でソート、表示は formatDateShort
     const byDate = new Map<string, number>();
+    let latestGoal = 0;
+    let latestCreated = "";
     for (const w of workouts) {
-      if (w.exercise !== exercise || w.warmup) continue;
+      if (w.exercise !== exercise) continue;
+      // 最新の goal を取得（created降順で最初に見つかった非ゼロ値）
+      if (w.goal > 0 && w.created > latestCreated) {
+        latestGoal = w.goal;
+        latestCreated = w.created;
+      }
+      if (w.warmup) continue;
       const isoDate = w.created.slice(0, 10); // "YYYY-MM-DD"
       byDate.set(isoDate, Math.max(byDate.get(isoDate) ?? 0, w.weight));
     }
@@ -63,16 +72,17 @@ export function WorkoutChart({ workouts }: Props) {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([isoDate, weight]) => ({ date: formatDateShort(isoDate), weight }));
 
-    if (data.length === 0) return { chartData: data, yDomain: [0, 100] as [number, number] };
+    if (data.length === 0) return { chartData: data, yDomain: [0, 100] as [number, number], goalWeight: latestGoal };
 
     const weights = data.map((d) => d.weight);
-    const min = Math.min(...weights);
-    const max = Math.max(...weights);
+    const allValues = latestGoal > 0 ? [...weights, latestGoal] : weights;
+    const min = Math.min(...allValues);
+    const max = Math.max(...allValues);
     const padding = Math.max((max - min) * 0.5, 2.5); // 振れ幅の50%か最低2.5kgを余白に
     const lower = Math.max(0, Math.floor((min - padding) / 2.5) * 2.5);
     const upper = Math.ceil((max + padding) / 2.5) * 2.5;
 
-    return { chartData: data, yDomain: [lower, upper] as [number, number] };
+    return { chartData: data, yDomain: [lower, upper] as [number, number], goalWeight: latestGoal };
   }, [workouts, exercise]);
 
   if (workouts.length === 0) return null;
@@ -80,8 +90,13 @@ export function WorkoutChart({ workouts }: Props) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-medium">重量の推移</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium whitespace-nowrap">重量の推移</p>
+            {goalWeight > 0 && (
+              <span className="text-xs text-muted-foreground whitespace-nowrap">目標 {goalWeight}kg</span>
+            )}
+          </div>
           <div className="flex gap-2">
             <Select value={part} onValueChange={handlePartChange}>
               <SelectTrigger className="h-7 w-20 text-xs">
@@ -97,7 +112,7 @@ export function WorkoutChart({ workouts }: Props) {
               <SelectTrigger className="h-7 w-44 text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="min-w-max">
                 {EXERCISES[part].map((ex) => (
                   <SelectItem key={ex} value={ex} className="text-xs">{ex}</SelectItem>
                 ))}
@@ -132,6 +147,14 @@ export function WorkoutChart({ workouts }: Props) {
                 contentStyle={{ fontSize: 12 }}
                 formatter={(value) => [`${value} kg`, "重量"]}
               />
+              {goalWeight > 0 && (
+                <ReferenceLine
+                  y={goalWeight}
+                  stroke="hsl(221 83% 53%)"
+                  strokeDasharray="4 4"
+                  strokeWidth={1.5}
+                />
+              )}
               <Line
                 type="monotone"
                 dataKey="weight"

@@ -15,8 +15,9 @@ const PERIODS: { value: Period; label: string }[] = [
 ];
 
 function dateString(offsetDays: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - offsetDays);
+  // JST (UTC+9) の日付を基準にする
+  const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  d.setUTCDate(d.getUTCDate() - offsetDays);
   return d.toISOString().split("T")[0];
 }
 

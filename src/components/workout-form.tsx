@@ -26,7 +26,7 @@ const PARTS: Part[] = ["胸", "腕", "背中", "脚"];
 
 const EXERCISES: Record<Part, string[]> = {
   胸: ["ベンチプレス", "インクラインベンチプレス", "ダンベルフライ", "ペックデックフライ", "ディップス", "チェストプレス"],
-  腕: ["アームカール", "バイセップカール", "ハンマーカール", "プリーチャーカール", "スカルクラッシャー", "トライセップスプレッドバー", "ケーブルカール"],
+  腕: ["アームカール", "バイセップカール", "ハンマーカール", "プリーチャーカール", "スカルクラッシャー", "ライイング・トリセプス・エクステンション", "ケーブルカール"],
   背中: ["ラットプルダウン", "ベントオーバーロウ", "シーテッドロウ", "デッドリフト", "懸垂（チンアップ）", "アームカール", "フェイスプル"],
   脚: ["スクワット", "レッグプレス", "レッグカール", "レッグエクステンション", "ランジ", "カーフレイズ", "ルーマニアンデッドリフト"],
 };
@@ -64,6 +64,7 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
       : defaultForm
   );
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const setField = <K extends keyof WorkoutFormData>(key: K, value: WorkoutFormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -79,6 +80,7 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
       const url = initial ? `/api/workouts/${initial.id}` : "/api/workouts";
       const method = initial ? "PUT" : "POST";
@@ -87,9 +89,14 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error ?? `Failed to save (${res.status})`);
+      }
       const entry: WorkoutEntry = await res.json();
       onSuccess(entry);
+    } catch (e: any) {
+      setError(e?.message ?? "保存に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -123,7 +130,7 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={form.parts ? "選択してください" : "部位を先に選択"} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="min-w-max">
                 {exercises.map((ex) => (
                   <SelectItem key={ex} value={ex}>{ex}</SelectItem>
                 ))}
@@ -161,7 +168,7 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
               type="number"
               min={0}
               step={0.5}
-              value={form.weight}
+              value={form.weight || ""}
               onChange={(e) => setField("weight", Number(e.target.value))}
             />
           </div>
@@ -172,7 +179,7 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
               type="number"
               min={0}
               step={0.5}
-              value={form.goal}
+              value={form.goal || ""}
               onChange={(e) => setField("goal", Number(e.target.value))}
             />
           </div>
@@ -210,6 +217,10 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
             </label>
           ))}
         </div>
+
+        {error && (
+          <p className="text-xs text-destructive">{error}</p>
+        )}
 
         <div className="flex gap-2 justify-end">
           {onCancel && (
