@@ -20,17 +20,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { WorkoutEntry } from "@/lib/types";
-
-type Part = "胸" | "腕" | "背中" | "脚";
-
-const PARTS: Part[] = ["胸", "腕", "背中", "脚"];
-
-const EXERCISES: Record<Part, string[]> = {
-  胸: ["ベンチプレス", "インクラインベンチプレス", "ダンベルフライ", "ペックデックフライ", "ディップス", "チェストプレス"],
-  腕: ["アームカール", "バイセップカール", "ハンマーカール", "プリーチャーカール", "スカルクラッシャー", "ライイング・トリセプス・エクステンション", "ケーブルカール"],
-  背中: ["ラットプルダウン", "ベントオーバーロウ", "シーテッドロウ", "デッドリフト", "懸垂（チンアップ）", "アームカール", "フェイスプル"],
-  脚: ["スクワット", "レッグプレス", "レッグカール", "レッグエクステンション", "ランジ", "カーフレイズ", "ルーマニアンデッドリフト"],
-};
+import { PARTS, EXERCISES, type Part } from "@/lib/exercises";
 
 type Props = { workouts: WorkoutEntry[] };
 

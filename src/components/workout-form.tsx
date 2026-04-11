@@ -13,22 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { WorkoutEntry, WorkoutFormData } from "@/lib/types";
+import { PARTS, EXERCISES, type Part } from "@/lib/exercises";
 
 type Props = {
   initial?: WorkoutEntry;
   onSuccess: (entry: WorkoutEntry) => void;
   onCancel?: () => void;
-};
-
-type Part = "胸" | "腕" | "背中" | "脚";
-
-const PARTS: Part[] = ["胸", "腕", "背中", "脚"];
-
-const EXERCISES: Record<Part, string[]> = {
-  胸: ["ベンチプレス", "インクラインベンチプレス", "ダンベルフライ", "ペックデックフライ", "ディップス", "チェストプレス"],
-  腕: ["アームカール", "バイセップカール", "ハンマーカール", "プリーチャーカール", "スカルクラッシャー", "ライイング・トリセプス・エクステンション", "ケーブルカール"],
-  背中: ["ラットプルダウン", "ベントオーバーロウ", "シーテッドロウ", "デッドリフト", "懸垂（チンアップ）", "アームカール", "フェイスプル"],
-  脚: ["スクワット", "レッグプレス", "レッグカール", "レッグエクステンション", "ランジ", "カーフレイズ", "ルーマニアンデッドリフト"],
 };
 
 const defaultForm: WorkoutFormData = {
@@ -46,23 +36,11 @@ const defaultForm: WorkoutFormData = {
 };
 
 export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
-  const [form, setForm] = useState<WorkoutFormData>(
-    initial
-      ? {
-        parts: initial.parts,
-        exercise: initial.exercise,
-        set: initial.set,
-        rep: initial.rep,
-        weight: initial.weight,
-        goal: initial.goal,
-        memo: initial.memo,
-        negative: initial.negative,
-        warmup: initial.warmup,
-        hasRebound: initial.hasRebound,
-        notStable: initial.notStable,
-      }
-      : defaultForm
-  );
+  const [form, setForm] = useState<WorkoutFormData>(() => {
+    if (!initial) return defaultForm;
+    const { id: _id, created: _created, ...rest } = initial;
+    return rest;
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -45,19 +45,12 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkoutForm } from "@/components/workout-form";
 import type { WorkoutEntry } from "@/lib/types";
+import { PARTS, EXERCISES, type Part } from "@/lib/exercises";
 import { Pencil, Trash2, MessageSquare, X } from "lucide-react";
-
-const PARTS = ["胸", "腕", "背中", "脚"] as const;
-const EXERCISES: Record<string, string[]> = {
-  胸: ["ベンチプレス", "インクラインベンチプレス", "ダンベルフライ", "ペックデックフライ", "ディップス", "チェストプレス"],
-  腕: ["アームカール", "バイセップカール", "ハンマーカール", "プリーチャーカール", "スカルクラッシャー", "ライイング・トリセプス・エクステンション", "ケーブルカール"],
-  背中: ["ラットプルダウン", "ベントオーバーロウ", "シーテッドロウ", "デッドリフト", "懸垂（チンアップ）", "アームカール", "フェイスプル"],
-  脚: ["スクワット", "レッグプレス", "レッグカール", "レッグエクステンション", "ランジ", "カーフレイズ", "ルーマニアンデッドリフト"],
-};
 
 const DAYS_PER_PAGE = 14; // 2週間
 
-/** page=1 → 直近28日、page=2 → その前28日、... */
+/** page=1 → 直近14日、page=2 → その前14日、... */
 function getPageWindow(page: number): { from: Date; to: Date } {
   const now = new Date();
   const to = new Date(now);
@@ -127,7 +120,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
     setFilterExercise("");
   }
 
-  const filterExercises = filterParts ? EXERCISES[filterParts] ?? [] : [];
+  const filterExercises = filterParts ? EXERCISES[filterParts as Part] ?? [] : [];
 
   const baseWorkouts = isFiltered
     ? workouts.filter((w) => {
