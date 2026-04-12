@@ -288,7 +288,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
               <Smile className="h-3.5 w-3.5" />
               気分
             </div>
-            {moodSelect && saving ? (
+            {saving ? (
               <div className="flex items-center gap-1 mt-1 text-muted-foreground">
                 <RefreshCw className="h-4 w-4 animate-spin" />
               </div>
