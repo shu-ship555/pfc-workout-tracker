@@ -144,51 +144,57 @@ export function WorkoutChart({ workouts }: Props) {
             データが不足しています（2件以上必要）
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={chartData} margin={{ top: 2, right: 8, left: -16, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                domain={yDomain}
-                tick={{ fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(v) => `${v}kg`}
-              />
-              <Tooltip
-                content={({ active, payload, label }) => (
-                  <ChartTooltip
-                    active={active}
-                    label={label != null ? String(label) : undefined}
-                    items={payload?.[0]?.value != null ? [
-                      { label: "重量", color: "hsl(var(--primary))", value: `${String(payload[0].value)} kg` },
-                    ] : []}
+          <div className="overflow-x-auto -mx-1 px-1">
+            <div style={{ minWidth: Math.max(chartData.length * 28, 320) }}>
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={chartData} margin={{ top: 2, right: 16, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={0}
                   />
-                )}
-              />
-              {goalWeight > 0 && (
-                <ReferenceLine
-                  y={goalWeight}
-                  stroke="hsl(221 83% 53%)"
-                  strokeDasharray="4 4"
-                  strokeWidth={1.5}
-                />
-              )}
-              <Line
-                type="linear"
-                dataKey="weight"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-                className="stroke-primary"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+                  <YAxis
+                    domain={yDomain}
+                    tick={{ fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v) => `${v}kg`}
+                    width={36}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => (
+                      <ChartTooltip
+                        active={active}
+                        label={label != null ? String(label) : undefined}
+                        items={payload?.[0]?.value != null ? [
+                          { label: "重量", color: "hsl(var(--primary))", value: `${String(payload[0].value)} kg` },
+                        ] : []}
+                      />
+                    )}
+                  />
+                  {goalWeight > 0 && (
+                    <ReferenceLine
+                      y={goalWeight}
+                      stroke="hsl(221 83% 53%)"
+                      strokeDasharray="4 4"
+                      strokeWidth={1.5}
+                    />
+                  )}
+                  <Line
+                    type="linear"
+                    dataKey="weight"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
+                    className="stroke-primary"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         )}
         <p className="text-xs text-muted-foreground mt-1 text-right">
           ウォームアップを除く最大重量

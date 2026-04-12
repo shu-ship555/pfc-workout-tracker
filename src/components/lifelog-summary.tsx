@@ -72,13 +72,19 @@ function formatLogDate(date: string): string {
   return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
 }
 
+function getNinetyDaysAgoStr(): string {
+  const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  d.setDate(d.getDate() - 90);
+  return d.toISOString().split("T")[0];
+}
+
 
 const LOG_TOOLTIP_DEFS: { key: string; label: string; color: string; format: (v: number) => string }[] = [
-  { key: "mood",    label: "気分",     color: "#16a34a",          format: (v) => `${v} / 10` },
-  { key: "sleep",   label: "睡眠",     color: "hsl(221 83% 53%)", format: (v) => `${v} 時間` },
-  { key: "tempMax", label: "最高気温", color: "#f97316",          format: (v) => `${v}℃` },
-  { key: "tempMin", label: "最低気温", color: "#06b6d4",          format: (v) => `${v}℃` },
-  { key: "steps",   label: "歩数",     color: "#64748b",          format: (v) => `${v.toLocaleString()} 歩` },
+  { key: "mood", label: "気分", color: "#16a34a", format: (v) => `${v} / 10` },
+  { key: "sleep", label: "睡眠", color: "hsl(221 83% 53%)", format: (v) => `${v} 時間` },
+  { key: "tempMax", label: "最高気温", color: "#f97316", format: (v) => `${v}℃` },
+  { key: "tempMin", label: "最低気温", color: "#06b6d4", format: (v) => `${v}℃` },
+  { key: "steps", label: "歩数", color: "#64748b", format: (v) => `${v.toLocaleString()} 歩` },
 ];
 
 export function LifeLogSummary({ logs, onRefresh }: Props) {
@@ -105,8 +111,10 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
     setSaving(false);
   }
 
-  // 古い順に並べてチャートデータを生成
+  // 最新90日分に絞り、古い順に並べてチャートデータを生成
+  const ninetyDaysAgoStr = getNinetyDaysAgoStr();
   const chartData = [...logs]
+    .filter((log) => log.date.replace(/\//g, "-") >= ninetyDaysAgoStr)
     .reverse()
     .map((log) => ({
       date: formatLogDate(log.date),
@@ -144,37 +152,34 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
         {chartData.length >= 2 && (
           <>
             {/* 凡例 */}
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
               <p className="text-xs text-muted-foreground">気分・睡眠・歩数・気温の推移</p>
-              <div className="flex items-center gap-4">
-                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                   <span className="inline-block h-0.5 w-4 rounded-full bg-green-600" />
                   気分
                 </span>
-                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                   <span className="inline-block h-0.5 w-4 rounded-full" style={{ background: "hsl(221 83% 53%)" }} />
                   睡眠
                 </span>
-                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                   <span className="inline-block w-4 border-t-2 border-dashed border-orange-500" />
                   最高気温
                 </span>
-                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                   <span className="inline-block w-4 border-t-2 border-dashed border-cyan-500" />
                   最低気温
                 </span>
-                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                   <span className="inline-block h-2 w-4 rounded-sm bg-slate-400 opacity-40" />
                   歩数
                 </span>
               </div>
             </div>
-            {/* SP: 横スクロール / PC: 全幅表示 */}
+            {/* 常にスクロール可能、データ量に応じた最小幅 */}
             <div className="overflow-x-auto -mx-1 px-1">
-              <div
-                className="w-full"
-                style={{ minWidth: Math.max(chartData.length * 28, 320) }}
-              >
+              <div style={{ minWidth: Math.max(chartData.length * 28, 320) }}>
                 <ResponsiveContainer width="100%" height={160}>
                   <ComposedChart data={chartData} margin={{ top: 2, right: 0, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -345,20 +350,20 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
             ) : null}
           </div>
 
-          {/* 湿度・歩数 */}
+          {/* 歩数・湿度 */}
           <div className="rounded-lg px-3 pt-1.5 pb-2 bg-muted/50">
             <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <Droplets className="h-3.5 w-3.5" />
-              湿度 / 歩数
+              <Footprints className="h-3.5 w-3.5" />
+              歩数 / 湿度
             </div>
             <p className="text-sm font-mono mt-0.5">
-              {latest.humidity != null ? `${latest.humidity}%` : "—"}
+              {latest.steps != null ? `${latest.steps.toLocaleString()} 歩` : "—"}
             </p>
-            {latest.steps != null ? (
+            {latest.humidity != null ? (
               <div className="flex items-center gap-1 mt-0.5">
-                <Footprints className="h-3 w-3 text-muted-foreground" />
+                <Droplets className="h-3 w-3 text-muted-foreground" />
                 <p className="text-xs font-mono text-muted-foreground">
-                  {latest.steps.toLocaleString()} 歩
+                  {latest.humidity}%
                 </p>
               </div>
             ) : null}

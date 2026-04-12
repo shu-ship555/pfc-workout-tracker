@@ -81,15 +81,15 @@ export default function Home() {
 
       {/* SP: 画面下部固定バー / PC: 右下FAB */}
       <div className="fixed bottom-0 left-0 right-0 z-50 sm:bottom-6 sm:left-auto sm:right-6 sm:w-auto">
-        <div className="sm:hidden border-t bg-card px-4 pt-2 pb-3">
-          <Button className="w-full h-auto pt-1 pb-2 hover:bg-primary/80" onClick={() => setOpen(true)}>
+        <div className="sm:hidden border-t bg-card px-4 pt-3 pb-4">
+          <Button className="w-full h-auto pt-2 pb-3 hover:bg-primary/80" onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
             記録を追加
           </Button>
         </div>
         <Button
           size="lg"
-          className="hidden sm:flex items-center gap-1 shadow-lg rounded-full h-auto px-6 pt-1.5 pb-2.5 hover:bg-primary/80 hover:shadow-xl hover:scale-105"
+          className="hidden sm:flex items-center gap-1 shadow-lg rounded-lg h-auto px-6 pt-1.5 pb-2.5 hover:bg-primary/80 hover:shadow-xl hover:scale-105"
           onClick={() => setOpen(true)}
         >
           <Plus className="h-5 w-5" />
