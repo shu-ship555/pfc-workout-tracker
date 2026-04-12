@@ -118,7 +118,7 @@ export function WorkoutChart({ workouts }: Props) {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={chartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+            <LineChart data={chartData} margin={{ top: 2, right: 8, left: -16, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis
                 dataKey="date"

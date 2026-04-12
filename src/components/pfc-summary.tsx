@@ -82,7 +82,7 @@ export function PFCSummary({ meals }: Props) {
       <CardContent>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {items.map((item) => (
-            <div key={item.label} className={`rounded-lg px-3 py-2 ${item.color}`}>
+            <div key={item.label} className={`rounded-lg px-3 pt-1.5 pb-2 ${item.color}`}>
               <p className="text-xs font-medium opacity-70">{item.label}</p>
               <p className="text-xl font-bold font-mono">
                 {item.value.toFixed(item.unit === "kcal" ? 0 : 1)}

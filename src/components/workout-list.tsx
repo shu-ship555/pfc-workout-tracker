@@ -201,7 +201,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
 
   if (workouts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center pt-10 pb-12 text-muted-foreground">
         <p className="text-sm">記録がありません</p>
         <p className="text-xs mt-1">「記録を追加」から最初のトレーニングを登録しましょう</p>
       </div>
@@ -267,7 +267,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
       {paginate && !isFiltered && <PageNav />}
 
       {displayed.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border rounded-md">
+        <div className="flex flex-col items-center justify-center pt-10 pb-12 text-muted-foreground border rounded-md">
           <p className="text-sm">この期間の記録はありません</p>
         </div>
       ) : (

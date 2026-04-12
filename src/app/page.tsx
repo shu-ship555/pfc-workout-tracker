@@ -49,13 +49,13 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="border-b bg-card">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 pt-3 pb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Dumbbell className="h-6 w-6 text-primary" />
             <h1 className="text-lg font-bold tracking-tight">PFC Workout Tracker</h1>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger render={<Button size="sm" className="hover:bg-primary/80" />}>
+            <DialogTrigger render={<Button size="sm" className="h-auto pt-1 pb-1.5 hover:bg-primary/80" />}>
               <Plus className="h-4 w-4 mr-1" />
               記録を追加
             </DialogTrigger>
@@ -71,15 +71,15 @@ export default function Home() {
 
       {/* SP: 画面下部固定バー / PC: 右下FAB */}
       <div className="fixed bottom-0 left-0 right-0 z-50 sm:bottom-6 sm:left-auto sm:right-6 sm:w-auto">
-        <div className="sm:hidden border-t bg-card px-4 py-3">
-          <Button className="w-full hover:bg-primary/80" onClick={() => setOpen(true)}>
+        <div className="sm:hidden border-t bg-card px-4 pt-2 pb-3">
+          <Button className="w-full h-auto pt-1 pb-2 hover:bg-primary/80" onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
             記録を追加
           </Button>
         </div>
         <Button
           size="lg"
-          className="hidden sm:flex items-center gap-1 shadow-lg rounded-full px-6 hover:bg-primary/80 hover:shadow-xl hover:scale-105"
+          className="hidden sm:flex items-center gap-1 shadow-lg rounded-full h-auto px-6 pt-1.5 pb-2.5 hover:bg-primary/80 hover:shadow-xl hover:scale-105"
           onClick={() => setOpen(true)}
         >
           <Plus className="h-5 w-5" />
@@ -87,14 +87,14 @@ export default function Home() {
         </Button>
       </div>
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-6 pb-24 sm:pb-6">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-5 pb-24 sm:pb-6 space-y-6">
         <PFCSummary meals={meals} />
 
-        <Separator className="my-12" />
+        <Separator className="mt-10 mb-12" />
 
         <WorkoutChart workouts={workouts} />
 
-        <Separator className="my-12" />
+        <Separator className="mt-10 mb-12" />
 
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium">筋トレ記録</h2>
