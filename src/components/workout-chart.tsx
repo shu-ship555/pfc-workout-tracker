@@ -22,6 +22,7 @@ import {
 } from "recharts";
 import type { WorkoutEntry } from "@/lib/types";
 import { PARTS, EXERCISES, type Part } from "@/lib/exercises";
+import { ChartTooltip } from "@/components/chart-tooltip";
 
 type Props = { workouts: WorkoutEntry[] };
 
@@ -160,8 +161,15 @@ export function WorkoutChart({ workouts }: Props) {
                 tickFormatter={(v) => `${v}kg`}
               />
               <Tooltip
-                contentStyle={{ fontSize: 12 }}
-                formatter={(value) => [`${value} kg`, "重量"]}
+                content={({ active, payload, label }) => (
+                  <ChartTooltip
+                    active={active}
+                    label={label != null ? String(label) : undefined}
+                    items={payload?.[0]?.value != null ? [
+                      { label: "重量", color: "hsl(var(--primary))", value: `${String(payload[0].value)} kg` },
+                    ] : []}
+                  />
+                )}
               />
               {goalWeight > 0 && (
                 <ReferenceLine
@@ -172,7 +180,7 @@ export function WorkoutChart({ workouts }: Props) {
                 />
               )}
               <Line
-                type="monotone"
+                type="linear"
                 dataKey="weight"
                 strokeWidth={2}
                 dot={{ r: 3 }}
