@@ -25,7 +25,7 @@ const defaultForm: WorkoutFormData = {
   parts: "",
   exercise: "",
   set: 3,
-  rep: 10,
+  rep: 8,
   weight: 0,
   goal: 0,
   memo: "",
