@@ -1,9 +1,10 @@
 import { Client } from "@notionhq/client";
-import type { WorkoutEntry, WorkoutFormData, MealEntry } from "./types";
+import type { WorkoutEntry, WorkoutFormData, MealEntry, LifeLogEntry } from "./types";
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const WORKOUT_DB = process.env.NOTION_WORKOUT_DATABASE_ID!;
 const FOOD_DB = process.env.NOTION_FOOD_DATABASE_ID!;
+const LIFELOG_DB = process.env.NOTION_LIFELOG_DATABASE_ID!;
 
 // --- Workout DB ---
 
@@ -99,4 +100,32 @@ export async function listMeals(): Promise<MealEntry[]> {
     sorts: [{ property: "Date", direction: "descending" }],
   });
   return response.results.map(pageToMeal);
+}
+
+// --- LifeLog DB ---
+
+function pageToLifeLog(page: any): LifeLogEntry {
+  const props = page.properties;
+  return {
+    id: page.id,
+    date: props["名前"]?.title?.[0]?.plain_text ?? "",
+    mood: props["数値化した気分"]?.formula?.number ?? null,
+    sleepTime: props["入眠"]?.rich_text?.[0]?.plain_text ?? "",
+    wakeTime: props["起床"]?.rich_text?.[0]?.plain_text ?? "",
+    weather: props["天気"]?.rich_text?.[0]?.plain_text ?? "",
+    tempMax: props["最高気温"]?.number ?? null,
+    tempMin: props["最低気温"]?.number ?? null,
+    humidity: props["湿度"]?.number ?? null,
+    steps: props["歩数"]?.number ?? null,
+    city: props["街"]?.rich_text?.[0]?.plain_text ?? "",
+  };
+}
+
+export async function listLifeLogs(): Promise<LifeLogEntry[]> {
+  const response = await notion.databases.query({
+    database_id: LIFELOG_DB,
+    sorts: [{ timestamp: "created_time", direction: "descending" }],
+    page_size: 30,
+  });
+  return response.results.map(pageToLifeLog);
 }

@@ -16,15 +16,15 @@
 
 ## 🛠 技術スタック
 
-| カテゴリ | 技術 |
-|---|---|
-| フレームワーク | Next.js (App Router) |
-| 言語 | TypeScript |
-| スタイリング | Tailwind CSS |
-| UIコンポーネント | shadcn/ui |
-| チャート | Recharts |
-| データストア | Notion API |
-| デプロイ | Vercel |
+| カテゴリ         | 技術                 |
+| ---------------- | -------------------- |
+| フレームワーク   | Next.js (App Router) |
+| 言語             | TypeScript           |
+| スタイリング     | Tailwind CSS         |
+| UIコンポーネント | shadcn/ui            |
+| チャート         | Recharts             |
+| データストア     | Notion API           |
+| デプロイ         | Vercel               |
 
 ---
 
@@ -54,36 +54,37 @@
 NOTION_API_KEY=your_notion_integration_token
 NOTION_WORKOUT_DATABASE_ID=your_workout_db_id
 NOTION_FOOD_DATABASE_ID=your_food_db_id
+NOTION_LIFELOG_DATABASE_ID=your_lifelog_db_id
 ```
 
 ### Notion DBのスキーマ
 
 **Workout DB**
 
-| プロパティ名 | 型 |
-|---|---|
-| Memo | タイトル |
-| Parts | セレクト |
-| Exercise | セレクト |
-| Set | 数値 |
-| Rep | 数値 |
-| Weight | 数値 |
-| Goal | 数値 |
-| Negative | チェックボックス |
-| Warmup | チェックボックス |
-| hasRebound | チェックボックス |
-| notStable | チェックボックス |
+| プロパティ名 | 型               |
+| ------------ | ---------------- |
+| Memo         | タイトル         |
+| Parts        | セレクト         |
+| Exercise     | セレクト         |
+| Set          | 数値             |
+| Rep          | 数値             |
+| Weight       | 数値             |
+| Goal         | 数値             |
+| Negative     | チェックボックス |
+| Warmup       | チェックボックス |
+| hasRebound   | チェックボックス |
+| notStable    | チェックボックス |
 
 **Food DB**
 
-| プロパティ名 | 型 |
-|---|---|
-| Name | タイトル |
-| Date | 日付 |
-| Kcal | 数値 |
-| Protein | 数値 |
-| Fat | 数値 |
-| Carb | 数値 |
+| プロパティ名 | 型       |
+| ------------ | -------- |
+| Name         | タイトル |
+| Date         | 日付     |
+| Kcal         | 数値     |
+| Protein      | 数値     |
+| Fat          | 数値     |
+| Carb         | 数値     |
 
 ### 起動
 

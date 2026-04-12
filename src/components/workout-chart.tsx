@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -32,8 +33,17 @@ function formatDateShort(iso: string) {
 }
 
 export function WorkoutChart({ workouts }: Props) {
+  const todayStr = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
+
   const [part, setPart] = useState<Part>("胸");
   const [exercise, setExercise] = useState<string>("ベンチプレス");
+  const threeMonthsAgoStr = (() => {
+    const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    d.setUTCMonth(d.getUTCMonth() - 3);
+    return d.toISOString().split("T")[0];
+  })();
+  const [filterDateFrom, setFilterDateFrom] = useState(threeMonthsAgoStr);
+  const [filterDateTo, setFilterDateTo] = useState(todayStr);
 
   function handlePartChange(value: string | null) {
     const next = (value ?? "胸") as Part;
@@ -49,13 +59,15 @@ export function WorkoutChart({ workouts }: Props) {
     let latestCreated = "";
     for (const w of workouts) {
       if (w.exercise !== exercise) continue;
+      const isoDate = w.created.slice(0, 10);
+      if (filterDateFrom && isoDate < filterDateFrom) continue;
+      if (filterDateTo && isoDate > filterDateTo) continue;
       // 最新の goal を取得（created降順で最初に見つかった非ゼロ値）
       if (w.goal > 0 && w.created > latestCreated) {
         latestGoal = w.goal;
         latestCreated = w.created;
       }
       if (w.warmup) continue;
-      const isoDate = w.created.slice(0, 10); // "YYYY-MM-DD"
       byDate.set(isoDate, Math.max(byDate.get(isoDate) ?? 0, w.weight));
     }
     const data = Array.from(byDate.entries())
@@ -68,26 +80,41 @@ export function WorkoutChart({ workouts }: Props) {
     const allValues = latestGoal > 0 ? [...weights, latestGoal] : weights;
     const min = Math.min(...allValues);
     const max = Math.max(...allValues);
-    const padding = Math.max((max - min) * 0.5, 2.5); // 振れ幅の50%か最低2.5kgを余白に
+    const padding = Math.max((max - min) * 0.5, 2.5);
     const lower = Math.max(0, Math.floor((min - padding) / 2.5) * 2.5);
     const upper = Math.ceil((max + padding) / 2.5) * 2.5;
 
     return { chartData: data, yDomain: [lower, upper] as [number, number], goalWeight: latestGoal };
-  }, [workouts, exercise]);
+  }, [workouts, exercise, filterDateFrom, filterDateTo]);
 
   if (workouts.length === 0) return null;
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium whitespace-nowrap">重量の推移</p>
             {goalWeight > 0 && (
               <span className="text-xs text-muted-foreground whitespace-nowrap">目標 {goalWeight}kg</span>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Input
+                type="date"
+                className="h-7 w-32 text-xs"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+              />
+              <span className="text-xs text-muted-foreground">〜</span>
+              <Input
+                type="date"
+                className="h-7 w-32 text-xs"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+              />
+            </div>
             <Select value={part} onValueChange={handlePartChange}>
               <SelectTrigger className="h-7 w-20 text-xs">
                 <SelectValue />

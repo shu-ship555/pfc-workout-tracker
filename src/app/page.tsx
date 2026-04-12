@@ -14,12 +14,14 @@ import { WorkoutForm } from "@/components/workout-form";
 import { WorkoutList } from "@/components/workout-list";
 import { WorkoutChart } from "@/components/workout-chart";
 import { PFCSummary } from "@/components/pfc-summary";
-import type { WorkoutEntry, MealEntry } from "@/lib/types";
+import { LifeLogSummary } from "@/components/lifelog-summary";
+import type { WorkoutEntry, MealEntry, LifeLogEntry } from "@/lib/types";
 import { Plus, Dumbbell } from "lucide-react";
 
 export default function Home() {
   const [workouts, setWorkouts] = useState<WorkoutEntry[]>([]);
   const [meals, setMeals] = useState<MealEntry[]>([]);
+  const [lifeLogs, setLifeLogs] = useState<LifeLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
@@ -27,9 +29,11 @@ export default function Home() {
     Promise.all([
       fetch("/api/workouts").then((r) => r.json()),
       fetch("/api/meals").then((r) => r.json()),
-    ]).then(([workoutData, mealData]: [WorkoutEntry[], MealEntry[]]) => {
+      fetch("/api/lifelog").then((r) => r.ok ? r.json() : []),
+    ]).then(([workoutData, mealData, lifeLogData]: [WorkoutEntry[], MealEntry[], LifeLogEntry[]]) => {
       setWorkouts(workoutData);
       setMeals(mealData);
+      setLifeLogs(lifeLogData);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -89,6 +93,10 @@ export default function Home() {
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-5 pb-24 sm:pb-6 space-y-6">
         <PFCSummary meals={meals} />
+
+        <Separator className="mt-10 mb-12" />
+
+        <LifeLogSummary logs={lifeLogs} />
 
         <Separator className="mt-10 mb-12" />
 

@@ -16,6 +16,20 @@ export type WorkoutEntry = {
 
 export type WorkoutFormData = Omit<WorkoutEntry, "id" | "created">;
 
+export type LifeLogEntry = {
+  id: string;
+  date: string; // "YYYY/MM/DD"
+  mood: number | null;
+  sleepTime: string;
+  wakeTime: string;
+  weather: string;
+  tempMax: number | null;
+  tempMin: number | null;
+  humidity: number | null;
+  steps: number | null;
+  city: string;
+};
+
 export type MealEntry = {
   id: string;
   date: string;
