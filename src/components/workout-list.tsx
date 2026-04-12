@@ -361,7 +361,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
       {paginate && !isFiltered && <PageNav />}
 
       <Dialog open={!!editTarget} onOpenChange={(o) => !o && setEditTarget(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>記録を編集</DialogTitle>
           </DialogHeader>
@@ -379,7 +379,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
       </Dialog>
 
       <Dialog open={!!memoTarget} onOpenChange={(o) => !o && setMemoTarget(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-[10px] sm:text-xs text-zinc-500 font-medium">
               {memoTarget?.exercise} のメモ

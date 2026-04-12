@@ -59,7 +59,7 @@ export default function Home() {
               <Plus className="h-4 w-4 mr-1" />
               記録を追加
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>新しい記録を追加</DialogTitle>
               </DialogHeader>
