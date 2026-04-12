@@ -43,20 +43,17 @@ function MoodDots({ mood }: { mood: number }) {
 export function LifeLogSummary({ logs, onRefresh }: Props) {
   const latest = logs[0] ?? null;
   const [moodOptions, setMoodOptions] = useState<string[]>([]);
-  const [moodSelect, setMoodSelect] = useState(latest?.moodSelect ?? "");
   const [saving, setSaving] = useState(false);
+
+  // saving中はspinnerを表示するため、optimistic updateは不要
+  const moodSelect = latest?.moodSelect ?? "";
 
   useEffect(() => {
     fetch("/api/lifelog/options").then((r) => r.json()).then(setMoodOptions);
   }, []);
 
-  useEffect(() => {
-    setMoodSelect(latest?.moodSelect ?? "");
-  }, [latest?.moodSelect]);
-
   async function handleMoodChange(value: string | null) {
     if (!latest || saving || !value) return;
-    setMoodSelect(value);
     setSaving(true);
     await fetch(`/api/lifelog/${latest.id}`, {
       method: "PATCH",

@@ -73,8 +73,8 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
       }
       const entry: WorkoutEntry = await res.json();
       onSuccess(entry);
-    } catch (e: any) {
-      setError(e?.message ?? "保存に失敗しました");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "保存に失敗しました");
     } finally {
       setLoading(false);
     }

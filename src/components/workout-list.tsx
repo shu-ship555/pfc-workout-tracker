@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -89,9 +89,10 @@ type Props = {
   paginate?: boolean;
   onUpdate: (entry: WorkoutEntry) => void;
   onDelete: (id: string) => void;
+  onDisplayChange?: (info: { label: string; count: number }) => void;
 };
 
-export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onDelete }: Props) {
+export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onDelete, onDisplayChange }: Props) {
   const [page, setPage] = useState(1);
   const [editTarget, setEditTarget] = useState<WorkoutEntry | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<WorkoutEntry | null>(null);
@@ -145,6 +146,12 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
     })()
     : baseWorkouts;
 
+  useEffect(() => {
+    const label = isFiltered ? "フィルター中" : formatWindowLabel(page);
+    onDisplayChange?.({ label, count: displayed.length });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayed.length, page, isFiltered]);
+
   async function confirmDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -156,8 +163,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
 
   function PageNav() {
     return (
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">{formatWindowLabel(page)}</p>
+      <div className="flex items-center justify-end">
         <Pagination className="w-auto mx-0">
           <PaginationContent>
             <PaginationItem>
@@ -263,8 +269,6 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
           <p className="text-xs text-muted-foreground ml-auto">{displayed.length} 件</p>
         )}
       </div>
-
-      {paginate && !isFiltered && <PageNav />}
 
       {displayed.length === 0 ? (
         <div className="flex flex-col items-center justify-center pt-10 pb-12 text-muted-foreground border rounded-md">

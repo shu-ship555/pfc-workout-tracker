@@ -33,17 +33,16 @@ function formatDateShort(iso: string) {
 }
 
 export function WorkoutChart({ workouts }: Props) {
-  const todayStr = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
-
   const [part, setPart] = useState<Part>("胸");
   const [exercise, setExercise] = useState<string>("ベンチプレス");
-  const threeMonthsAgoStr = (() => {
+  const [filterDateFrom, setFilterDateFrom] = useState(() => {
     const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
     d.setUTCMonth(d.getUTCMonth() - 3);
     return d.toISOString().split("T")[0];
-  })();
-  const [filterDateFrom, setFilterDateFrom] = useState(threeMonthsAgoStr);
-  const [filterDateTo, setFilterDateTo] = useState(todayStr);
+  });
+  const [filterDateTo, setFilterDateTo] = useState(
+    () => new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0]
+  );
 
   function handlePartChange(value: string | null) {
     const next = (value ?? "胸") as Part;
@@ -93,7 +92,7 @@ export function WorkoutChart({ workouts }: Props) {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium whitespace-nowrap">重量の推移</p>
             {goalWeight > 0 && (
               <span className="text-xs text-muted-foreground whitespace-nowrap">目標 {goalWeight}kg</span>

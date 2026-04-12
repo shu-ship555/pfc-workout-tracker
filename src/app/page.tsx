@@ -24,23 +24,24 @@ export default function Home() {
   const [lifeLogs, setLifeLogs] = useState<LifeLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [listDisplay, setListDisplay] = useState<{ label: string; count: number } | null>(null);
+
+  async function fetchLifeLogs() {
+    const data: LifeLogEntry[] = await fetch("/api/lifelog").then((r) => r.ok ? r.json() : []);
+    setLifeLogs(data);
+  }
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/workouts").then((r) => r.json()),
-      fetch("/api/meals").then((r) => r.json()),
-      fetch("/api/lifelog").then((r) => r.ok ? r.json() : []),
-    ]).then(([workoutData, mealData, lifeLogData]: [WorkoutEntry[], MealEntry[], LifeLogEntry[]]) => {
+      fetch("/api/workouts").then((r) => r.json()) as Promise<WorkoutEntry[]>,
+      fetch("/api/meals").then((r) => r.json()) as Promise<MealEntry[]>,
+      fetch("/api/lifelog").then((r): Promise<LifeLogEntry[]> => r.ok ? r.json() : Promise.resolve([])),
+    ]).then(([workoutData, mealData, lifeLogData]) => {
       setWorkouts(workoutData);
       setMeals(mealData);
       setLifeLogs(lifeLogData);
     }).finally(() => setLoading(false));
   }, []);
-
-  async function refreshLifeLogs() {
-    const data: LifeLogEntry[] = await fetch("/api/lifelog").then((r) => r.ok ? r.json() : []);
-    setLifeLogs(data);
-  }
 
   function handleAdd(entry: WorkoutEntry) {
     setWorkouts((prev) => [entry, ...prev]);
@@ -101,7 +102,7 @@ export default function Home() {
 
         <Separator className="mt-10 mb-12" />
 
-        <LifeLogSummary logs={lifeLogs} onRefresh={refreshLifeLogs} />
+        <LifeLogSummary logs={lifeLogs} onRefresh={fetchLifeLogs} />
 
         <Separator className="mt-10 mb-12" />
 
@@ -111,7 +112,13 @@ export default function Home() {
 
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium">筋トレ記録</h2>
-          <p className="text-xs text-muted-foreground">{workouts.length} 件</p>
+          <p className="text-xs text-muted-foreground">
+            {listDisplay ? (
+              <>{listDisplay.label} <span className="text-foreground/40 mx-0.5">|</span> {listDisplay.count} / {workouts.length} 件</>
+            ) : (
+              <>{workouts.length} 件</>
+            )}
+          </p>
         </div>
 
         <WorkoutList
@@ -120,6 +127,7 @@ export default function Home() {
           paginate
           onUpdate={handleUpdate}
           onDelete={handleDelete}
+          onDisplayChange={setListDisplay}
         />
       </main>
     </div>
