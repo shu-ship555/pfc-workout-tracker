@@ -108,8 +108,6 @@ export default function Home() {
 
         <WorkoutChart workouts={workouts} />
 
-        <Separator className="mt-10 mb-12" />
-
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium">筋トレ記録</h2>
           <p className="text-xs text-muted-foreground">
