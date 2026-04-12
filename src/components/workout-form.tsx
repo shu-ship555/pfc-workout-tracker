@@ -118,7 +118,7 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
         </div>
 
         {/* セット・レップ・重量・目標 */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 gap-4">
           <div className="space-y-1">
             <Label htmlFor="set">セット</Label>
             <Input

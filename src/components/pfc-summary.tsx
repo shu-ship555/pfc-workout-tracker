@@ -106,7 +106,7 @@ export function PFCSummary({ meals, lifeLogs }: Props) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {items.map((item) => (
             <div key={item.label} className={`rounded-lg px-3 pt-1.5 pb-2 ${item.color}`}>
               <p className="text-xs font-medium opacity-70">{item.label}</p>

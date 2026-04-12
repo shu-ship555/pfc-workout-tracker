@@ -102,20 +102,20 @@ export function WorkoutChart({ workouts }: Props) {
             <div className="flex items-center gap-1">
               <Input
                 type="date"
-                className="h-7 w-32 text-xs"
+                className="h-8 w-32 text-xs"
                 value={filterDateFrom}
                 onChange={(e) => setFilterDateFrom(e.target.value)}
               />
               <span className="text-xs text-muted-foreground">〜</span>
               <Input
                 type="date"
-                className="h-7 w-32 text-xs"
+                className="h-8 w-32 text-xs"
                 value={filterDateTo}
                 onChange={(e) => setFilterDateTo(e.target.value)}
               />
             </div>
             <Select value={part} onValueChange={handlePartChange}>
-              <SelectTrigger className="h-7 w-20 text-xs">
+              <SelectTrigger className="h-8 w-20 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -125,7 +125,7 @@ export function WorkoutChart({ workouts }: Props) {
               </SelectContent>
             </Select>
             <Select value={exercise} onValueChange={(v) => setExercise(v ?? exercise)}>
-              <SelectTrigger className="h-7 w-44 text-xs">
+              <SelectTrigger className="h-8 w-44 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="min-w-max">

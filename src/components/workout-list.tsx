@@ -340,7 +340,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7"
+                        className="h-8 w-8"
                         onClick={() => setEditTarget(w)}
                       >
                         <Pencil className="h-3.5 w-3.5" />
@@ -348,7 +348,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => setDeleteTarget(w)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />

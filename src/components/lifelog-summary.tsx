@@ -87,7 +87,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {/* 気分 */}
           <div className="rounded-lg px-3 pt-1.5 pb-2 bg-muted/50">
             <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
@@ -112,7 +112,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                 onValueChange={handleMoodChange}
                 disabled={saving}
               >
-                <SelectTrigger className="h-7 mt-0.5 text-xs border-0 bg-transparent px-0 shadow-none focus:ring-0">
+                <SelectTrigger className="h-8 mt-0.5 text-xs border-0 bg-transparent px-0 shadow-none focus:ring-0">
                   <SelectValue placeholder="未入力" />
                 </SelectTrigger>
                 <SelectContent className="min-w-max">
@@ -177,7 +177,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
         </div>
 
         {(latest.city || latest.consumedKcal != null) && (
-          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
             {latest.city && (
               <div className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />
