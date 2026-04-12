@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { MealEntry } from "@/lib/types";
+import { AlertTriangle } from "lucide-react";
+import type { MealEntry, LifeLogEntry } from "@/lib/types";
 
 type Period = "today" | "yesterday" | "3days" | "7days";
 
@@ -15,10 +16,14 @@ const PERIODS: { value: Period; label: string }[] = [
 ];
 
 function dateString(offsetDays: number): string {
-  // JST (UTC+9) の日付を基準にする
   const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
   d.setUTCDate(d.getUTCDate() - offsetDays);
   return d.toISOString().split("T")[0];
+}
+
+// "2026/04/11" → "2026-04-11"
+function normalizeLifeLogDate(date: string): string {
+  return date.replace(/\//g, "-");
 }
 
 function filterMeals(meals: MealEntry[], period: Period): MealEntry[] {
@@ -32,17 +37,37 @@ function filterMeals(meals: MealEntry[], period: Period): MealEntry[] {
       return meals.filter((m) => dates.has(m.date));
     }
     case "7days": {
-      const dates = new Set(
-        Array.from({ length: 7 }, (_, i) => dateString(i + 1))
-      );
+      const dates = new Set(Array.from({ length: 7 }, (_, i) => dateString(i + 1)));
       return meals.filter((m) => dates.has(m.date));
     }
   }
 }
 
-type Props = { meals: MealEntry[] };
+function filterConsumedKcal(logs: LifeLogEntry[], period: Period): number | null {
+  let dates: string[];
+  switch (period) {
+    case "today":
+      dates = [dateString(0)];
+      break;
+    case "yesterday":
+      dates = [dateString(1)];
+      break;
+    case "3days":
+      dates = [dateString(1), dateString(2), dateString(3)];
+      break;
+    case "7days":
+      dates = Array.from({ length: 7 }, (_, i) => dateString(i + 1));
+      break;
+  }
+  const dateSet = new Set(dates);
+  const matched = logs.filter((l) => dateSet.has(normalizeLifeLogDate(l.date)) && l.consumedKcal != null);
+  if (matched.length === 0) return null;
+  return matched.reduce((s, l) => s + (l.consumedKcal ?? 0), 0);
+}
 
-export function PFCSummary({ meals }: Props) {
+type Props = { meals: MealEntry[]; lifeLogs: LifeLogEntry[] };
+
+export function PFCSummary({ meals, lifeLogs }: Props) {
   const [period, setPeriod] = useState<Period>("today");
 
   const filtered = filterMeals(meals, period);
@@ -50,6 +75,7 @@ export function PFCSummary({ meals }: Props) {
   const fat     = filtered.reduce((s, m) => s + m.fat, 0);
   const carb    = filtered.reduce((s, m) => s + m.carb, 0);
   const kcal    = filtered.reduce((s, m) => s + m.kcal, 0);
+  const consumed = filterConsumedKcal(lifeLogs, period);
 
   const items = [
     { label: "P タンパク質", value: protein, unit: "g",    color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
@@ -84,10 +110,27 @@ export function PFCSummary({ meals }: Props) {
           {items.map((item) => (
             <div key={item.label} className={`rounded-lg px-3 pt-1.5 pb-2 ${item.color}`}>
               <p className="text-xs font-medium opacity-70">{item.label}</p>
-              <p className="text-xl font-bold font-mono">
-                {item.value.toFixed(item.unit === "kcal" ? 0 : 1)}
-                <span className="text-xs font-normal ml-0.5">{item.unit}</span>
-              </p>
+              {item.unit === "kcal" && consumed != null ? (
+                <>
+                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                    {item.value.toFixed(0)}
+                    <span className="text-xs font-normal mx-0.5">/</span>
+                    {consumed.toFixed(0)}
+                    <span className="text-xs font-normal ml-0.5">kcal</span>
+                  </p>
+                  {item.value > consumed && (
+                    <div className="flex items-center gap-0.5 mt-0.5 text-red-500">
+                      <AlertTriangle className="h-3 w-3" />
+                      <span className="text-xs">摂取超過</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-xl font-bold font-mono">
+                  {item.value.toFixed(item.unit === "kcal" ? 0 : 1)}
+                  <span className="text-xs font-normal ml-0.5">{item.unit}</span>
+                </p>
+              )}
             </div>
           ))}
         </div>

@@ -37,6 +37,11 @@ export default function Home() {
     }).finally(() => setLoading(false));
   }, []);
 
+  async function refreshLifeLogs() {
+    const data: LifeLogEntry[] = await fetch("/api/lifelog").then((r) => r.ok ? r.json() : []);
+    setLifeLogs(data);
+  }
+
   function handleAdd(entry: WorkoutEntry) {
     setWorkouts((prev) => [entry, ...prev]);
     setOpen(false);
@@ -92,11 +97,11 @@ export default function Home() {
       </div>
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-5 pb-24 sm:pb-6 space-y-6">
-        <PFCSummary meals={meals} />
+        <PFCSummary meals={meals} lifeLogs={lifeLogs} />
 
         <Separator className="mt-10 mb-12" />
 
-        <LifeLogSummary logs={lifeLogs} />
+        <LifeLogSummary logs={lifeLogs} onRefresh={refreshLifeLogs} />
 
         <Separator className="mt-10 mb-12" />
 

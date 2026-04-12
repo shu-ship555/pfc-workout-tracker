@@ -118,6 +118,8 @@ function pageToLifeLog(page: any): LifeLogEntry {
     humidity: props["湿度"]?.number ?? null,
     steps: props["歩数"]?.number ?? null,
     city: props["街"]?.rich_text?.[0]?.plain_text ?? "",
+    consumedKcal: props["消費カロリー"]?.number ?? null,
+    moodSelect: props["気分"]?.select?.name ?? "",
   };
 }
 
@@ -128,4 +130,19 @@ export async function listLifeLogs(): Promise<LifeLogEntry[]> {
     page_size: 30,
   });
   return response.results.map(pageToLifeLog);
+}
+
+export async function getMoodSelectOptions(): Promise<string[]> {
+  const db = await notion.databases.retrieve({ database_id: LIFELOG_DB }) as any;
+  const options = db.properties["気分"]?.select?.options ?? [];
+  return options.map((o: any) => o.name);
+}
+
+export async function updateLifeLogMood(id: string, moodSelect: string): Promise<void> {
+  await notion.pages.update({
+    page_id: id,
+    properties: {
+      気分: { select: moodSelect ? { name: moodSelect } : null } as any,
+    },
+  });
 }

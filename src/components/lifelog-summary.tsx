@@ -1,10 +1,18 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { LifeLogEntry } from "@/lib/types";
-import { Moon, Sun, Cloud, Thermometer, Droplets, Footprints, MapPin, Smile } from "lucide-react";
+import { Moon, Sun, Cloud, Thermometer, Droplets, Footprints, MapPin, Smile, Flame, RefreshCw } from "lucide-react";
 
-type Props = { logs: LifeLogEntry[] };
+type Props = { logs: LifeLogEntry[]; onRefresh?: () => Promise<void> };
 
 function getMoodColor(mood: number): string {
   if (mood <= 1 || mood >= 9) return "text-red-500";
@@ -32,8 +40,33 @@ function MoodDots({ mood }: { mood: number }) {
   );
 }
 
-export function LifeLogSummary({ logs }: Props) {
+export function LifeLogSummary({ logs, onRefresh }: Props) {
   const latest = logs[0] ?? null;
+  const [moodOptions, setMoodOptions] = useState<string[]>([]);
+  const [moodSelect, setMoodSelect] = useState(latest?.moodSelect ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/lifelog/options").then((r) => r.json()).then(setMoodOptions);
+  }, []);
+
+  useEffect(() => {
+    setMoodSelect(latest?.moodSelect ?? "");
+  }, [latest?.moodSelect]);
+
+  async function handleMoodChange(value: string | null) {
+    if (!latest || saving || !value) return;
+    setMoodSelect(value);
+    setSaving(true);
+    await fetch(`/api/lifelog/${latest.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moodSelect: value }),
+    });
+    await new Promise((r) => setTimeout(r, 1500));
+    await onRefresh?.();
+    setSaving(false);
+  }
 
   if (!latest) {
     return (
@@ -64,16 +97,33 @@ export function LifeLogSummary({ logs }: Props) {
               <Smile className="h-3.5 w-3.5" />
               気分
             </div>
-            {latest.mood !== null ? (
+            {moodSelect && saving ? (
+              <div className="flex items-center gap-1 mt-1 text-muted-foreground">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              </div>
+            ) : moodSelect && latest.mood != null ? (
               <>
-                <p className={`text-xl font-bold font-mono mt-0.5 ${getMoodColor(latest.mood!)}`}>
+                <p className={`text-xl font-bold font-mono mt-0.5 ${getMoodColor(latest.mood)}`}>
                   {latest.mood}
                   <span className="text-xs font-normal ml-0.5">/ 10</span>
                 </p>
                 <MoodDots mood={latest.mood} />
               </>
             ) : (
-              <p className="text-sm text-muted-foreground mt-0.5">—</p>
+              <Select
+                value={moodSelect}
+                onValueChange={handleMoodChange}
+                disabled={saving}
+              >
+                <SelectTrigger className="h-7 mt-0.5 text-xs border-0 bg-transparent px-0 shadow-none focus:ring-0">
+                  <SelectValue placeholder="未入力" />
+                </SelectTrigger>
+                <SelectContent className="min-w-max">
+                  {moodOptions.map((opt) => (
+                    <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
 
@@ -99,7 +149,7 @@ export function LifeLogSummary({ logs }: Props) {
               天気 / 気温
             </div>
             <p className="text-sm mt-0.5">{latest.weather || "—"}</p>
-            {latest.tempMax !== null && latest.tempMin !== null ? (
+            {latest.tempMax != null && latest.tempMin != null ? (
               <div className="flex items-center gap-1 mt-0.5">
                 <Thermometer className="h-3 w-3 text-muted-foreground" />
                 <p className="text-xs font-mono text-muted-foreground">
@@ -116,9 +166,9 @@ export function LifeLogSummary({ logs }: Props) {
               湿度 / 歩数
             </div>
             <p className="text-sm font-mono mt-0.5">
-              {latest.humidity !== null ? `${latest.humidity}%` : "—"}
+              {latest.humidity != null ? `${latest.humidity}%` : "—"}
             </p>
-            {latest.steps !== null ? (
+            {latest.steps != null ? (
               <div className="flex items-center gap-1 mt-0.5">
                 <Footprints className="h-3 w-3 text-muted-foreground" />
                 <p className="text-xs font-mono text-muted-foreground">
@@ -129,10 +179,21 @@ export function LifeLogSummary({ logs }: Props) {
           </div>
         </div>
 
-        {latest.city && (
-          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5" />
-            {latest.city}
+        {(latest.city || latest.consumedKcal != null) && (
+          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+            {latest.city && (
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" />
+                {latest.city}
+              </div>
+            )}
+            {latest.consumedKcal != null && (
+              <div className="flex items-center gap-1">
+                <Flame className="h-3.5 w-3.5" />
+                <span className="font-mono">{latest.consumedKcal.toLocaleString()}</span>
+                <span>kcal</span>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

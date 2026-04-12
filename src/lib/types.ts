@@ -28,6 +28,8 @@ export type LifeLogEntry = {
   humidity: number | null;
   steps: number | null;
   city: string;
+  consumedKcal: number | null;
+  moodSelect: string; // 気分セレクト値
 };
 
 export type MealEntry = {
