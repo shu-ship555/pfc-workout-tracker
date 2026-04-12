@@ -80,11 +80,11 @@ function getNinetyDaysAgoStr(): string {
 
 
 const LOG_TOOLTIP_DEFS: { key: string; label: string; color: string; format: (v: number) => string }[] = [
-  { key: "mood", label: "気分", color: "#16a34a", format: (v) => `${v} / 10` },
-  { key: "sleep", label: "睡眠", color: "hsl(221 83% 53%)", format: (v) => `${v} 時間` },
-  { key: "tempMax", label: "最高気温", color: "#f97316", format: (v) => `${v}℃` },
-  { key: "tempMin", label: "最低気温", color: "#06b6d4", format: (v) => `${v}℃` },
-  { key: "steps", label: "歩数", color: "#64748b", format: (v) => `${v.toLocaleString()} 歩` },
+  { key: "mood",    label: "気分",     color: "var(--color-green-600)",  format: (v) => `${v} / 10` },
+  { key: "sleep",   label: "睡眠",     color: "var(--color-blue-600)",   format: (v) => `${v} 時間` },
+  { key: "tempMax", label: "最高気温", color: "var(--color-orange-500)", format: (v) => `${v}℃` },
+  { key: "tempMin", label: "最低気温", color: "var(--color-cyan-500)",   format: (v) => `${v}℃` },
+  { key: "steps",   label: "歩数",     color: "var(--color-slate-500)",  format: (v) => `${v.toLocaleString()} 歩` },
 ];
 
 export function LifeLogSummary({ logs, onRefresh }: Props) {
@@ -160,7 +160,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                   気分
                 </span>
                 <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <span className="inline-block h-0.5 w-4 rounded-full" style={{ background: "hsl(221 83% 53%)" }} />
+                  <span className="inline-block h-0.5 w-4 rounded-full bg-blue-600" />
                   睡眠
                 </span>
                 <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -172,7 +172,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                   最低気温
                 </span>
                 <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <span className="inline-block h-2 w-4 rounded-sm bg-slate-400 opacity-40" />
+                  <span className="inline-block h-2 w-4 rounded-sm opacity-40 bg-slate-400" />
                   歩数
                 </span>
               </div>
@@ -226,7 +226,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                     <Bar
                       yAxisId="right"
                       dataKey="steps"
-                      fill="#94a3b8"
+                      fill="var(--color-slate-400)"
                       opacity={0.4}
                       barSize={4}
                       radius={[2, 2, 0, 0]}
@@ -235,7 +235,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                       yAxisId="left"
                       type="linear"
                       dataKey="sleep"
-                      stroke="hsl(221 83% 53%)"
+                      stroke="var(--color-blue-600)"
                       strokeWidth={2}
                       dot={{ r: 2 }}
                       activeDot={{ r: 4 }}
@@ -245,7 +245,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                       yAxisId="left"
                       type="linear"
                       dataKey="mood"
-                      stroke="#16a34a"
+                      stroke="var(--color-green-600)"
                       strokeWidth={2}
                       dot={{ r: 2 }}
                       activeDot={{ r: 4 }}
@@ -255,7 +255,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                       yAxisId="temp"
                       type="linear"
                       dataKey="tempMax"
-                      stroke="#f97316"
+                      stroke="var(--color-orange-500)"
                       strokeWidth={1}
                       strokeDasharray="4 2"
                       dot={false}
@@ -266,7 +266,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                       yAxisId="temp"
                       type="linear"
                       dataKey="tempMin"
-                      stroke="#06b6d4"
+                      stroke="var(--color-cyan-500)"
                       strokeWidth={1}
                       strokeDasharray="4 2"
                       dot={false}

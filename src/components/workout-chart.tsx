@@ -170,7 +170,7 @@ export function WorkoutChart({ workouts }: Props) {
                         active={active}
                         label={label != null ? String(label) : undefined}
                         items={payload?.[0]?.value != null ? [
-                          { label: "重量", color: "hsl(var(--primary))", value: `${String(payload[0].value)} kg` },
+                          { label: "重量", color: "var(--color-primary)", value: `${String(payload[0].value)} kg` },
                         ] : []}
                       />
                     )}
@@ -178,7 +178,7 @@ export function WorkoutChart({ workouts }: Props) {
                   {goalWeight > 0 && (
                     <ReferenceLine
                       y={goalWeight}
-                      stroke="hsl(221 83% 53%)"
+                      stroke="var(--color-blue-600)"
                       strokeDasharray="4 4"
                       strokeWidth={1.5}
                     />
@@ -186,10 +186,10 @@ export function WorkoutChart({ workouts }: Props) {
                   <Line
                     type="linear"
                     dataKey="weight"
+                    stroke="var(--color-blue-600)"
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     activeDot={{ r: 5 }}
-                    className="stroke-primary"
                   />
                 </LineChart>
               </ResponsiveContainer>
