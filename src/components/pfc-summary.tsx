@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Trash2, ChevronDown, ChevronUp, Pencil, Check, X } from "lucide-react";
 import type { MealEntry, LifeLogEntry } from "@/lib/types";
+import { PFC_COLORS } from "@/lib/color-constants";
+import { jstDaysAgo } from "@/lib/date-utils";
 
 type Period = "today" | "yesterday" | "3days" | "7days";
 
@@ -16,12 +18,6 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: "7days",     label: "過去1週間" },
 ];
 
-function dateString(offsetDays: number): string {
-  const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  d.setUTCDate(d.getUTCDate() - offsetDays);
-  return d.toISOString().split("T")[0];
-}
-
 // "2026/04/11" → "2026-04-11"
 function normalizeLifeLogDate(date: string): string {
   return date.replace(/\//g, "-");
@@ -30,15 +26,15 @@ function normalizeLifeLogDate(date: string): string {
 function filterMeals(meals: MealEntry[], period: Period): MealEntry[] {
   switch (period) {
     case "today":
-      return meals.filter((m) => m.date === dateString(0));
+      return meals.filter((m) => m.date === jstDaysAgo(0));
     case "yesterday":
-      return meals.filter((m) => m.date === dateString(1));
+      return meals.filter((m) => m.date === jstDaysAgo(1));
     case "3days": {
-      const dates = new Set([dateString(1), dateString(2), dateString(3)]);
+      const dates = new Set([jstDaysAgo(1), jstDaysAgo(2), jstDaysAgo(3)]);
       return meals.filter((m) => dates.has(m.date));
     }
     case "7days": {
-      const dates = new Set(Array.from({ length: 7 }, (_, i) => dateString(i + 1)));
+      const dates = new Set(Array.from({ length: 7 }, (_, i) => jstDaysAgo(i + 1)));
       return meals.filter((m) => dates.has(m.date));
     }
   }
@@ -48,16 +44,16 @@ function filterConsumedKcal(logs: LifeLogEntry[], period: Period): number | null
   let dates: string[];
   switch (period) {
     case "today":
-      dates = [dateString(0)];
+      dates = [jstDaysAgo(0)];
       break;
     case "yesterday":
-      dates = [dateString(1)];
+      dates = [jstDaysAgo(1)];
       break;
     case "3days":
-      dates = [dateString(1), dateString(2), dateString(3)];
+      dates = [jstDaysAgo(1), jstDaysAgo(2), jstDaysAgo(3)];
       break;
     case "7days":
-      dates = Array.from({ length: 7 }, (_, i) => dateString(i + 1));
+      dates = Array.from({ length: 7 }, (_, i) => jstDaysAgo(i + 1));
       break;
   }
   const dateSet = new Set(dates);
@@ -148,10 +144,10 @@ export function PFCSummary({ meals, lifeLogs, onMealDelete, onMealUpdate }: Prop
   const consumed = filterConsumedKcal(lifeLogs, period);
 
   const items = [
-    { label: "P タンパク質", value: protein, unit: "g",    color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
-    { label: "F 脂質",       value: fat,     unit: "g",    color: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400" },
-    { label: "C 炭水化物",   value: carb,    unit: "g",    color: "bg-green-500/10 text-green-600 dark:text-green-400" },
-    { label: "カロリー",     value: kcal,    unit: "kcal", color: "bg-orange-500/10 text-orange-600 dark:text-orange-400" },
+    { label: "P タンパク質", value: protein, unit: "g",    color: PFC_COLORS.protein },
+    { label: "F 脂質",       value: fat,     unit: "g",    color: PFC_COLORS.fat },
+    { label: "C 炭水化物",   value: carb,    unit: "g",    color: PFC_COLORS.carb },
+    { label: "カロリー",     value: kcal,    unit: "kcal", color: PFC_COLORS.kcal },
   ];
 
   return (

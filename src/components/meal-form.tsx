@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import type { MealEntry } from "@/lib/types";
 import type { MealAnalysis } from "@/lib/gemini";
+import { PFCGrid } from "@/components/pfc-grid";
 
 // --- Preset types & storage ---
 
@@ -280,27 +281,12 @@ export function MealForm({ onSuccess, onCancel }: Props) {
       <div className="space-y-4">
         <div className="rounded-lg border bg-card px-4 pt-3 pb-4 space-y-3">
           <p className="text-sm font-medium">{previewData.name}</p>
-          <div className="grid grid-cols-4 gap-2 text-center">
-            {(
-              [
-                { label: "kcal", value: previewData.kcal,    color: "bg-orange-500/10 text-orange-500" },
-                { label: "P",    value: previewData.protein, color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
-                { label: "F",    value: previewData.fat,     color: "bg-yellow-500/10 text-yellow-500" },
-                { label: "C",    value: previewData.carb,    color: "bg-green-500/10 text-green-600 dark:text-green-400" },
-              ] as const
-            ).map((item) => (
-              <div key={item.label} className={`rounded-md px-2 pt-1 pb-1.5 ${item.color}`}>
-                <p className="text-[10px] opacity-70">{item.label}</p>
-                <p className="text-sm font-bold font-mono leading-tight">
-                  {typeof item.value === "number"
-                    ? item.value % 1 === 0
-                      ? item.value
-                      : item.value.toFixed(1)
-                    : item.value}
-                </p>
-              </div>
-            ))}
-          </div>
+          <PFCGrid
+            kcal={previewData.kcal}
+            protein={previewData.protein}
+            fat={previewData.fat}
+            carb={previewData.carb}
+          />
         </div>
 
         {isImageSource && !supplementDone && (

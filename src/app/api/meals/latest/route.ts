@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteLatestMeal } from "@/lib/notion";
+import { apiError } from "@/lib/api-utils";
 
 export async function DELETE() {
   try {
@@ -12,7 +13,6 @@ export async function DELETE() {
     }
     return NextResponse.json(result);
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiError(e);
   }
 }

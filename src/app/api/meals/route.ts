@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { listMeals, createMeal } from "@/lib/notion";
+import { apiError } from "@/lib/api-utils";
+import { jstToday } from "@/lib/date-utils";
 
 export async function GET() {
   const meals = await listMeals();
@@ -9,12 +11,9 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const today = new Date(Date.now() + 9 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0];
     const meal = await createMeal({
       name: String(body.name),
-      date: today,
+      date: jstToday(),
       kcal: Number(body.kcal) || 0,
       protein: Number(body.protein) || 0,
       fat: Number(body.fat) || 0,
@@ -22,7 +21,6 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(meal);
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiError(e);
   }
 }

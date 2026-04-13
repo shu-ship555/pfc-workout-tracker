@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteMeal, updateMeal } from "@/lib/notion";
+import { apiError } from "@/lib/api-utils";
 
 export async function DELETE(
   _req: Request,
@@ -10,8 +11,7 @@ export async function DELETE(
     await deleteMeal(id);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiError(e);
   }
 }
 
@@ -32,7 +32,6 @@ export async function PATCH(
     });
     return NextResponse.json(meal);
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiError(e);
   }
 }

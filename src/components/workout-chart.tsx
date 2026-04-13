@@ -4,13 +4,6 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   LineChart,
   Line,
   XAxis,
@@ -21,29 +14,19 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { WorkoutEntry } from "@/lib/types";
-import { PARTS, EXERCISES, type Part } from "@/lib/exercises";
+import { EXERCISES, type Part } from "@/lib/exercises";
 import { ChartTooltip } from "@/components/chart-tooltip";
+import { PartSelect, ExerciseSelect } from "@/components/workout-selects";
+import { CHART_COLORS } from "@/lib/color-constants";
+import { jstToday, jstMonthsAgo, formatDateShort } from "@/lib/date-utils";
 
 type Props = { workouts: WorkoutEntry[] };
-
-function formatDateShort(iso: string) {
-  return new Date(iso).toLocaleDateString("ja-JP", {
-    month: "numeric",
-    day: "numeric",
-  });
-}
 
 export function WorkoutChart({ workouts }: Props) {
   const [part, setPart] = useState<Part>("胸");
   const [exercise, setExercise] = useState<string>("ベンチプレス");
-  const [filterDateFrom, setFilterDateFrom] = useState(() => {
-    const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
-    d.setUTCMonth(d.getUTCMonth() - 3);
-    return d.toISOString().split("T")[0];
-  });
-  const [filterDateTo, setFilterDateTo] = useState(
-    () => new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0]
-  );
+  const [filterDateFrom, setFilterDateFrom] = useState(() => jstMonthsAgo(3));
+  const [filterDateTo, setFilterDateTo] = useState(() => jstToday());
 
   function handlePartChange(value: string | null) {
     const next = (value ?? "胸") as Part;
@@ -115,26 +98,17 @@ export function WorkoutChart({ workouts }: Props) {
                 onChange={(e) => setFilterDateTo(e.target.value)}
               />
             </div>
-            <Select value={part} onValueChange={handlePartChange}>
-              <SelectTrigger className="h-8 w-20 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PARTS.map((p) => (
-                  <SelectItem key={p} value={p} className="text-xs">{p}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={exercise} onValueChange={(v) => setExercise(v ?? exercise)}>
-              <SelectTrigger className="h-8 w-44 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="min-w-max">
-                {EXERCISES[part].map((ex) => (
-                  <SelectItem key={ex} value={ex} className="text-xs">{ex}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <PartSelect
+              value={part}
+              onValueChange={handlePartChange}
+              triggerClassName="h-8 w-20 text-xs"
+            />
+            <ExerciseSelect
+              value={exercise}
+              part={part}
+              onValueChange={(v) => setExercise(v ?? exercise)}
+              triggerClassName="h-8 w-44 text-xs"
+            />
           </div>
         </div>
       </CardHeader>
@@ -178,7 +152,7 @@ export function WorkoutChart({ workouts }: Props) {
                   {goalWeight > 0 && (
                     <ReferenceLine
                       y={goalWeight}
-                      stroke="var(--color-blue-600)"
+                      stroke={CHART_COLORS.goal}
                       strokeDasharray="4 4"
                       strokeWidth={1.5}
                     />
@@ -186,7 +160,7 @@ export function WorkoutChart({ workouts }: Props) {
                   <Line
                     type="linear"
                     dataKey="weight"
-                    stroke="var(--color-blue-600)"
+                    stroke={CHART_COLORS.weight}
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     activeDot={{ r: 5 }}

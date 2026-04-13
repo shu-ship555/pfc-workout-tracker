@@ -32,20 +32,15 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkoutForm } from "@/components/workout-form";
+import { PartSelect, ExerciseSelect } from "@/components/workout-selects";
 import type { WorkoutEntry } from "@/lib/types";
-import { PARTS, EXERCISES, type Part } from "@/lib/exercises";
+import { jstToday, formatDateTime } from "@/lib/date-utils";
+import { FLAG_COLORS } from "@/lib/color-constants";
 import { Pencil, Trash2, MessageSquare, X } from "lucide-react";
 
 const DAYS_PER_PAGE = 14; // 2週間
@@ -65,15 +60,6 @@ function calcTotalPages(workouts: WorkoutEntry[]): number {
   const oldest = new Date(workouts[workouts.length - 1].created);
   const diffDays = Math.ceil((Date.now() - oldest.getTime()) / 86400000);
   return Math.max(1, Math.ceil(diffDays / DAYS_PER_PAGE));
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ja-JP", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 function formatWindowLabel(page: number): string {
@@ -99,7 +85,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
   const [memoTarget, setMemoTarget] = useState<WorkoutEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const todayStr = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const todayStr = jstToday();
 
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState(todayStr);
@@ -120,8 +106,6 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
     setFilterParts(!value || value === "すべて" ? "" : value);
     setFilterExercise("");
   }
-
-  const filterExercises = filterParts ? EXERCISES[filterParts as Part] ?? [] : [];
 
   const baseWorkouts = isFiltered
     ? workouts.filter((w) => {
@@ -233,32 +217,22 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
             onChange={(e) => setFilterDateTo(e.target.value)}
           />
         </div>
-        <Select value={filterParts || "すべて"} onValueChange={handleFilterPartsChange}>
-          <SelectTrigger className="h-8 w-24 text-xs">
-            <SelectValue placeholder="部位" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="すべて" className="text-xs">すべて</SelectItem>
-            {PARTS.map((p) => (
-              <SelectItem key={p} value={p} className="text-xs">{p}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
+        <PartSelect
+          value={filterParts || "すべて"}
+          onValueChange={handleFilterPartsChange}
+          includeAll
+          triggerClassName="h-8 w-24 text-xs"
+          placeholder="部位"
+        />
+        <ExerciseSelect
           value={filterExercise || "すべて"}
+          part={filterParts}
           onValueChange={(v) => setFilterExercise(!v || v === "すべて" ? "" : v)}
+          includeAll
           disabled={!filterParts}
-        >
-          <SelectTrigger className="h-8 w-44 text-xs">
-            <SelectValue placeholder="種目" />
-          </SelectTrigger>
-          <SelectContent className="min-w-max">
-            <SelectItem value="すべて" className="text-xs">すべて</SelectItem>
-            {filterExercises.map((ex) => (
-              <SelectItem key={ex} value={ex} className="text-xs">{ex}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          triggerClassName="h-8 w-44 text-xs"
+          placeholder="種目"
+        />
         {isFiltered && (
           <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={resetFilters}>
             <X className="h-3.5 w-3.5 mr-1" />
@@ -294,7 +268,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
               {displayed.map((w) => (
                 <TableRow key={w.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                    {formatDate(w.created)}
+                    {formatDateTime(w.created)}
                   </TableCell>
                   <TableCell>
                     {w.parts && <Badge variant="secondary">{w.parts}</Badge>}
@@ -331,8 +305,8 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
                     <div className="flex gap-1 flex-wrap">
                       {w.warmup && <Badge variant="outline" className="text-xs">WU</Badge>}
                       {w.negative && <Badge variant="outline" className="text-xs">NEG</Badge>}
-                      {w.hasRebound && <Badge variant="outline" className="text-xs text-yellow-600">反動</Badge>}
-                      {w.notStable && <Badge variant="outline" className="text-xs text-red-500">不安定</Badge>}
+                      {w.hasRebound && <Badge variant="outline" className={`text-xs ${FLAG_COLORS.rebound}`}>反動</Badge>}
+                      {w.notStable && <Badge variant="outline" className={`text-xs ${FLAG_COLORS.unstable}`}>不安定</Badge>}
                     </div>
                   </TableCell>
                   <TableCell>

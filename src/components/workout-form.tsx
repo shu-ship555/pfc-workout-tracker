@@ -5,15 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { WorkoutEntry, WorkoutFormData } from "@/lib/types";
-import { PARTS, EXERCISES, type Part } from "@/lib/exercises";
+import { PartSelect, ExerciseSelect } from "@/components/workout-selects";
 
 type Props = {
   initial?: WorkoutEntry;
@@ -51,10 +44,6 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
     setForm((prev) => ({ ...prev, parts: value ?? "", exercise: "" }));
   }
 
-  const exercises = form.parts && form.parts in EXERCISES
-    ? EXERCISES[form.parts as Part]
-    : [];
-
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -87,33 +76,20 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <Label>部位</Label>
-            <Select value={form.parts} onValueChange={handlePartsChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="選択してください" />
-              </SelectTrigger>
-              <SelectContent>
-                {PARTS.map((p) => (
-                  <SelectItem key={p} value={p}>{p}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <PartSelect
+              value={form.parts}
+              onValueChange={handlePartsChange}
+            />
           </div>
           <div className="space-y-1">
             <Label>種目</Label>
-            <Select
+            <ExerciseSelect
               value={form.exercise}
+              part={form.parts}
               onValueChange={(v) => setField("exercise", v ?? "")}
               disabled={!form.parts}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={form.parts ? "選択してください" : "部位を先に選択"} />
-              </SelectTrigger>
-              <SelectContent className="min-w-max">
-                {exercises.map((ex) => (
-                  <SelectItem key={ex} value={ex}>{ex}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder={form.parts ? "選択してください" : "部位を先に選択"}
+            />
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { analyzeText, analyzeImage, refineWithContext } from "@/lib/gemini";
+import { apiError } from "@/lib/api-utils";
 
 export async function POST(req: Request) {
   try {
@@ -25,7 +26,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiError(e);
   }
 }

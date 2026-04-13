@@ -22,24 +22,14 @@ import {
 } from "recharts";
 import type { LifeLogEntry } from "@/lib/types";
 import { ChartTooltip } from "@/components/chart-tooltip";
+import { getMoodColorClass, getMoodDotClass, CHART_COLORS } from "@/lib/color-constants";
+import { formatLogDate, jstDaysAgo } from "@/lib/date-utils";
 import { Moon, Sun, Cloud, Thermometer, Droplets, Footprints, MapPin, Smile, Flame, RefreshCw } from "lucide-react";
 
 type Props = { logs: LifeLogEntry[]; onRefresh?: () => Promise<void> };
 
-function getMoodColor(mood: number): string {
-  if (mood <= 1 || mood >= 9) return "text-red-500";
-  if (mood <= 3 || mood >= 7) return "text-yellow-500";
-  return "text-green-600 dark:text-green-400";
-}
-
-function getMoodDotColor(mood: number): string {
-  if (mood <= 1 || mood >= 9) return "bg-red-500";
-  if (mood <= 3 || mood >= 7) return "bg-yellow-500";
-  return "bg-green-600";
-}
-
 function MoodDots({ mood }: { mood: number }) {
-  const dotColor = getMoodDotColor(mood);
+  const dotColor = getMoodDotClass(mood);
   return (
     <div className="flex gap-0.5 mt-1">
       {Array.from({ length: 11 }, (_, i) => (
@@ -66,25 +56,12 @@ function parseSleepDuration(sleepTime: string, wakeTime: string): number | null 
   return Math.round(diff / 6) / 10; // 小数点1桁の時間
 }
 
-/** "2026/04/11" or "2026-04-11" → "4/11" */
-function formatLogDate(date: string): string {
-  const parts = date.replace(/-/g, "/").split("/");
-  return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
-}
-
-function getNinetyDaysAgoStr(): string {
-  const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  d.setDate(d.getDate() - 90);
-  return d.toISOString().split("T")[0];
-}
-
-
 const LOG_TOOLTIP_DEFS: { key: string; label: string; color: string; format: (v: number) => string }[] = [
-  { key: "mood",    label: "気分",     color: "var(--color-green-600)",  format: (v) => `${v} / 10` },
-  { key: "sleep",   label: "睡眠",     color: "var(--color-blue-600)",   format: (v) => `${v} 時間` },
-  { key: "tempMax", label: "最高気温", color: "var(--color-orange-500)", format: (v) => `${v}℃` },
-  { key: "tempMin", label: "最低気温", color: "var(--color-cyan-500)",   format: (v) => `${v}℃` },
-  { key: "steps",   label: "歩数",     color: "var(--color-slate-500)",  format: (v) => `${v.toLocaleString()} 歩` },
+  { key: "mood",    label: "気分",     color: CHART_COLORS.mood,    format: (v) => `${v} / 10` },
+  { key: "sleep",   label: "睡眠",     color: CHART_COLORS.sleep,   format: (v) => `${v} 時間` },
+  { key: "tempMax", label: "最高気温", color: CHART_COLORS.tempMax, format: (v) => `${v}℃` },
+  { key: "tempMin", label: "最低気温", color: CHART_COLORS.tempMin, format: (v) => `${v}℃` },
+  { key: "steps",   label: "歩数",     color: CHART_COLORS.steps,   format: (v) => `${v.toLocaleString()} 歩` },
 ];
 
 export function LifeLogSummary({ logs, onRefresh }: Props) {
@@ -112,7 +89,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
   }
 
   // 最新90日分に絞り、古い順に並べてチャートデータを生成
-  const ninetyDaysAgoStr = getNinetyDaysAgoStr();
+  const ninetyDaysAgoStr = jstDaysAgo(90);
   const chartData = [...logs]
     .filter((log) => log.date.replace(/\//g, "-") >= ninetyDaysAgoStr)
     .reverse()
@@ -156,23 +133,23 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
               <p className="text-xs text-muted-foreground">気分・睡眠・歩数・気温の推移</p>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <span className="inline-block h-0.5 w-4 rounded-full bg-green-600" />
+                  <span className="inline-block h-0.5 w-4 rounded-full" style={{ background: CHART_COLORS.mood }} />
                   気分
                 </span>
                 <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <span className="inline-block h-0.5 w-4 rounded-full bg-blue-600" />
+                  <span className="inline-block h-0.5 w-4 rounded-full" style={{ background: CHART_COLORS.sleep }} />
                   睡眠
                 </span>
                 <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <span className="inline-block w-4 border-t-2 border-dashed border-orange-500" />
+                  <span className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: CHART_COLORS.tempMax }} />
                   最高気温
                 </span>
                 <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <span className="inline-block w-4 border-t-2 border-dashed border-cyan-500" />
+                  <span className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: CHART_COLORS.tempMin }} />
                   最低気温
                 </span>
                 <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <span className="inline-block h-2 w-4 rounded-sm opacity-40 bg-slate-400" />
+                  <span className="inline-block h-2 w-4 rounded-sm opacity-40" style={{ background: CHART_COLORS.steps }} />
                   歩数
                 </span>
               </div>
@@ -226,7 +203,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                     <Bar
                       yAxisId="right"
                       dataKey="steps"
-                      fill="var(--color-slate-400)"
+                      fill={CHART_COLORS.steps}
                       opacity={0.4}
                       barSize={4}
                       radius={[2, 2, 0, 0]}
@@ -235,7 +212,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                       yAxisId="left"
                       type="linear"
                       dataKey="sleep"
-                      stroke="var(--color-blue-600)"
+                      stroke={CHART_COLORS.sleep}
                       strokeWidth={2}
                       dot={{ r: 2 }}
                       activeDot={{ r: 4 }}
@@ -245,7 +222,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                       yAxisId="left"
                       type="linear"
                       dataKey="mood"
-                      stroke="var(--color-green-600)"
+                      stroke={CHART_COLORS.mood}
                       strokeWidth={2}
                       dot={{ r: 2 }}
                       activeDot={{ r: 4 }}
@@ -255,7 +232,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                       yAxisId="temp"
                       type="linear"
                       dataKey="tempMax"
-                      stroke="var(--color-orange-500)"
+                      stroke={CHART_COLORS.tempMax}
                       strokeWidth={1}
                       strokeDasharray="4 2"
                       dot={false}
@@ -266,7 +243,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
                       yAxisId="temp"
                       type="linear"
                       dataKey="tempMin"
-                      stroke="var(--color-cyan-500)"
+                      stroke={CHART_COLORS.tempMin}
                       strokeWidth={1}
                       strokeDasharray="4 2"
                       dot={false}
@@ -294,7 +271,7 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
               </div>
             ) : moodSelect && latest.mood != null ? (
               <>
-                <p className={`text-xl font-bold font-mono mt-0.5 ${getMoodColor(latest.mood)}`}>
+                <p className={`text-xl font-bold font-mono mt-0.5 ${getMoodColorClass(latest.mood)}`}>
                   {latest.mood}
                   <span className="text-xs font-normal ml-0.5">/ 10</span>
                 </p>
