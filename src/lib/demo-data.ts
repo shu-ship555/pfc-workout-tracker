@@ -238,7 +238,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 6800,
     city: "東京",
     consumedKcal: 2180,
-    moodSelect: "普通",
+    moodSelect: "3",
   },
   {
     id: "demo-l-002",
@@ -253,7 +253,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 8200,
     city: "東京",
     consumedKcal: 2350,
-    moodSelect: "良い",
+    moodSelect: "4",
   },
   {
     id: "demo-l-003",
@@ -268,7 +268,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 4500,
     city: "東京",
     consumedKcal: 2080,
-    moodSelect: "疲れ気味",
+    moodSelect: "2",
   },
   {
     id: "demo-l-004",
@@ -283,7 +283,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 9500,
     city: "東京",
     consumedKcal: 2420,
-    moodSelect: "快調",
+    moodSelect: "5",
   },
   {
     id: "demo-l-005",
@@ -298,7 +298,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 7600,
     city: "東京",
     consumedKcal: 2290,
-    moodSelect: "良い",
+    moodSelect: "4",
   },
   {
     id: "demo-l-006",
@@ -313,7 +313,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 5200,
     city: "東京",
     consumedKcal: 2150,
-    moodSelect: "普通",
+    moodSelect: "3",
   },
   {
     id: "demo-l-007",
@@ -328,7 +328,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 2800,
     city: "東京",
     consumedKcal: 2060,
-    moodSelect: "眠い",
+    moodSelect: "1",
   },
   {
     id: "demo-l-008",
@@ -343,7 +343,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 8800,
     city: "東京",
     consumedKcal: 2380,
-    moodSelect: "良い",
+    moodSelect: "4",
   },
   {
     id: "demo-l-009",
@@ -358,7 +358,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 10200,
     city: "東京",
     consumedKcal: 2470,
-    moodSelect: "快調",
+    moodSelect: "5",
   },
   {
     id: "demo-l-010",
@@ -373,7 +373,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 6200,
     city: "東京",
     consumedKcal: 2120,
-    moodSelect: "普通",
+    moodSelect: "3",
   },
   {
     id: "demo-l-011",
@@ -388,7 +388,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 3600,
     city: "東京",
     consumedKcal: 2030,
-    moodSelect: "疲れ気味",
+    moodSelect: "2",
   },
   {
     id: "demo-l-012",
@@ -403,7 +403,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 7900,
     city: "東京",
     consumedKcal: 2310,
-    moodSelect: "良い",
+    moodSelect: "4",
   },
   {
     id: "demo-l-013",
@@ -418,7 +418,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 9800,
     city: "東京",
     consumedKcal: 2450,
-    moodSelect: "快調",
+    moodSelect: "5",
   },
   {
     id: "demo-l-014",
@@ -433,11 +433,11 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 7100,
     city: "東京",
     consumedKcal: 2200,
-    moodSelect: "普通",
+    moodSelect: "3",
   },
 ];
 
-export const DEMO_MOOD_OPTIONS: string[] = ["快調", "良い", "普通", "疲れ気味", "眠い"];
+export const DEMO_MOOD_OPTIONS: string[] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 
 export const DEMO_MEAL_ANALYSIS: MealAnalysis = {
   name: "鶏胸肉のサラダ",
