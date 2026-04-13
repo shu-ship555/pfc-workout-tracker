@@ -102,6 +102,34 @@ export async function listMeals(): Promise<MealEntry[]> {
   return response.results.map(pageToMeal);
 }
 
+export async function createMeal(data: Omit<MealEntry, "id">): Promise<MealEntry> {
+  const page = await notion.pages.create({
+    parent: { database_id: FOOD_DB },
+    properties: {
+      Name: { title: [{ text: { content: data.name } }] },
+      Date: { date: { start: data.date } },
+      Kcal: { number: data.kcal },
+      Protein: { number: data.protein },
+      Fat: { number: data.fat },
+      Carb: { number: data.carb },
+    },
+  });
+  return pageToMeal(page);
+}
+
+export async function deleteLatestMeal(): Promise<{ id: string; name: string } | null> {
+  const response = await notion.databases.query({
+    database_id: FOOD_DB,
+    sorts: [{ timestamp: "created_time", direction: "descending" }],
+    page_size: 1,
+  });
+  if (response.results.length === 0) return null;
+  const page = response.results[0] as any;
+  const name = page.properties?.Name?.title?.[0]?.plain_text ?? "不明な料理";
+  await notion.pages.update({ page_id: page.id, archived: true });
+  return { id: page.id, name };
+}
+
 // --- LifeLog DB ---
 
 function pageToLifeLog(page: any): LifeLogEntry {
