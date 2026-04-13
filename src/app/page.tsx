@@ -17,7 +17,9 @@ import { PFCSummary } from "@/components/pfc-summary";
 import { LifeLogSummary } from "@/components/lifelog-summary";
 import { MealForm } from "@/components/meal-form";
 import type { WorkoutEntry, MealEntry, LifeLogEntry } from "@/lib/types";
-import { Plus, Dumbbell, Utensils } from "lucide-react";
+import { Plus, Dumbbell, Utensils, FlaskConical } from "lucide-react";
+
+const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 export default function Home() {
   const [workouts, setWorkouts] = useState<WorkoutEntry[]>([]);
@@ -73,6 +75,12 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      {IS_DEMO && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-center justify-center gap-1.5 py-1.5">
+          <FlaskConical className="h-3.5 w-3.5 shrink-0" />
+          デモモード — 表示データはサンプルです。変更はページ再読み込みでリセットされます。
+        </div>
+      )}
       <header className="border-b bg-card">
         <div className="max-w-5xl mx-auto px-4 pt-3 pb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">

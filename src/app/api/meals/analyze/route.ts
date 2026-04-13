@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { analyzeText, analyzeImage, refineWithContext } from "@/lib/gemini";
 import { apiError } from "@/lib/api-utils";
+import { DEMO_MEAL_ANALYSIS } from "@/lib/demo-data";
+
+const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 export async function POST(req: Request) {
+  if (IS_DEMO) return NextResponse.json(DEMO_MEAL_ANALYSIS);
   try {
     const body = await req.json();
 
