@@ -93,6 +93,11 @@ export function MealForm({ onSuccess, onCancel }: Props) {
 
   const [error, setError] = useState<string | null>(null);
 
+  // direct input
+  const [directInput, setDirectInput] = useState({ name: "", kcal: 0, protein: 0, fat: 0, carb: 0 });
+  const [directSaving, setDirectSaving] = useState(false);
+  const [directError, setDirectError] = useState<string | null>(null);
+
   // presets
   const [presets, setPresets] = useState<Preset[]>(() => loadPresets());
   const [showManage, setShowManage] = useState(false);
@@ -138,6 +143,27 @@ export function MealForm({ onSuccess, onCancel }: Props) {
     const updated = presets.filter((p) => p.id !== id);
     setPresets(updated);
     persistPresets(updated);
+  }
+
+  // --- direct save ---
+
+  async function handleDirectSave() {
+    if (!directInput.name.trim()) return;
+    setDirectSaving(true);
+    setDirectError(null);
+    try {
+      const res = await fetch("/api/meals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(directInput),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "保存に失敗しました");
+      const meal: MealEntry = await res.json();
+      onSuccess(meal);
+    } catch (e) {
+      setDirectError(e instanceof Error ? e.message : "保存に失敗しました");
+      setDirectSaving(false);
+    }
   }
 
   // --- quick preset select ---
@@ -385,6 +411,57 @@ export function MealForm({ onSuccess, onCancel }: Props) {
               プリセットがありません
             </p>
           )}
+
+          <Separator />
+
+          {/* 直接入力 */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">直接入力</p>
+            <Input
+              placeholder="料理名"
+              value={directInput.name}
+              onChange={(e) => setDirectInput((p) => ({ ...p, name: e.target.value }))}
+              className="text-sm h-8"
+            />
+            <div className="grid grid-cols-4 gap-1.5">
+              {(
+                [
+                  { key: "kcal",    label: "kcal" },
+                  { key: "protein", label: "P(g)" },
+                  { key: "fat",     label: "F(g)" },
+                  { key: "carb",    label: "C(g)" },
+                ] as const
+              ).map(({ key, label }) => (
+                <div key={key} className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.1}
+                    value={directInput[key] || ""}
+                    onChange={(e) => setDirectInput((p) => ({ ...p, [key]: Number(e.target.value) }))}
+                    className="text-xs h-8 px-2"
+                  />
+                </div>
+              ))}
+            </div>
+            {directError && <p className="text-xs text-destructive">{directError}</p>}
+            <Button
+              type="button"
+              size="sm"
+              className="w-full h-8 hover:bg-primary/80"
+              disabled={!directInput.name.trim() || directSaving}
+              onClick={handleDirectSave}
+            >
+              {directSaving ? (
+                <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />保存中...</>
+              ) : (
+                <><Plus className="h-3.5 w-3.5 mr-1" />記録する</>
+              )}
+            </Button>
+          </div>
+
+          <Separator />
 
           <button
             type="button"
