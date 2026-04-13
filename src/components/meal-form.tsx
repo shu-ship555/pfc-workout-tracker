@@ -15,6 +15,7 @@ import {
   Plus,
   ChevronDown,
   ChevronUp,
+  AlertCircle,
 } from "lucide-react";
 import type { MealEntry } from "@/lib/types";
 import type { MealAnalysis } from "@/lib/gemini";
@@ -67,7 +68,7 @@ type MealData = {
   carb: number;
 };
 
-type Step = "input" | "analyzing" | "preview" | "saving";
+type Step = "input" | "analyzing" | "error" | "preview" | "saving";
 
 type Props = {
   onSuccess: (meal: MealEntry) => void;
@@ -201,7 +202,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
       setStep("preview");
     } catch (e) {
       setError(e instanceof Error ? e.message : "解析に失敗しました");
-      setStep("input");
+      setStep("error");
     }
   }
 
@@ -240,7 +241,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
       setStep("preview");
     } catch (e) {
       setError(e instanceof Error ? e.message : "解析に失敗しました");
-      setStep("input");
+      setStep("error");
     }
   }
 
@@ -296,6 +297,31 @@ export function MealForm({ onSuccess, onCancel }: Props) {
       <div className="flex flex-col items-center justify-center py-8 gap-2">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-xs text-muted-foreground">Geminiが解析中...</p>
+      </div>
+    );
+  }
+
+  // --- render: error ---
+
+  if (step === "error") {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-5 flex flex-col items-center gap-2 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+          <p className="text-sm font-medium text-destructive">解析に失敗しました</p>
+          {error && (
+            <p className="text-xs text-muted-foreground break-all">{error}</p>
+          )}
+        </div>
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => { setError(null); setStep("input"); }}
+          >
+            戻る
+          </Button>
+        </div>
       </div>
     );
   }
