@@ -99,7 +99,7 @@ src/
 
 Notion / Gemini APIキーなしでアプリの動作を確認できるデモ環境を用意している。
 
-**URL:** https://pfc-workout-tracker-o2r7u6tk2-shu-ship555s-projects.vercel.app/
+**URL:** https://pfc-workout-tracker-git-preview-shu-ship555s-projects.vercel.app/
 
 - 過去1週間分のサンプルデータが表示される
 - 追加・編集・削除の操作もUIとして動作する（ページ再読み込みでリセット）
