@@ -620,7 +620,6 @@ export function MealForm({ onSuccess, onCancel }: Props) {
             type="file"
             ref={fileInputRef}
             accept="image/*"
-            capture="environment"
             onChange={handleImageSelect}
             className="hidden"
           />
