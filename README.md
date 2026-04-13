@@ -95,6 +95,41 @@ src/
 
 ---
 
+## プレビュー（デモ環境）
+
+Notion / Gemini APIキーなしでアプリの動作を確認できるデモ環境を用意している。
+
+**URL:** https://pfc-workout-tracker-o2r7u6tk2-shu-ship555s-projects.vercel.app/
+
+- 過去1週間分のサンプルデータが表示される
+- 追加・編集・削除の操作もUIとして動作する（ページ再読み込みでリセット）
+- AI食事分析はダミーの固定レスポンスを返す
+- 画面上部に「デモモード」バナーが表示される
+
+### デモ環境の仕組み
+
+`preview` ブランチに Vercel 環境変数 `NEXT_PUBLIC_DEMO_MODE=true` を設定している。この変数が有効なとき、すべての API ルートが Notion / Gemini を呼ばずにダミーデータを返す。
+
+### デモ環境の更新手順
+
+```bash
+git checkout preview
+git merge main
+git push
+# Vercel が自動デプロイ → 同じURLに最新内容が反映される
+```
+
+### デモ環境をローカルで再現する
+
+```bash
+# .env.local に以下を追加
+NEXT_PUBLIC_DEMO_MODE=true
+
+npm run dev
+```
+
+---
+
 ## セットアップ
 
 ### 必要な環境変数
