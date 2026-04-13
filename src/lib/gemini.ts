@@ -6,7 +6,7 @@ export type MealAnalysis = {
   c: number;
 };
 
-const MODEL = "gemini-2.0-flash";
+const MODEL = "gemini-2.5-flash";
 
 async function callGemini(parts: unknown[]): Promise<MealAnalysis> {
   const key = process.env.GEMINI_API_KEY;
