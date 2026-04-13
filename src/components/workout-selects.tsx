@@ -29,7 +29,7 @@ export function PartSelect({
   placeholder = "選択してください",
 }: PartSelectProps) {
   return (
-    <Select value={value} onValueChange={onValueChange}>
+    <Select value={value} onValueChange={(v) => onValueChange(v ?? "")}>
       <SelectTrigger className={triggerClassName}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
@@ -72,7 +72,7 @@ export function ExerciseSelect({
   const exercises = part && part in EXERCISES ? EXERCISES[part as Part] ?? [] : [];
 
   return (
-    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+    <Select value={value} onValueChange={(v) => onValueChange(v ?? "")} disabled={disabled}>
       <SelectTrigger className={triggerClassName}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
