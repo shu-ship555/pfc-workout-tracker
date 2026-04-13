@@ -70,11 +70,10 @@ type Step = "input" | "analyzing" | "preview" | "saving";
 
 type Props = {
   onSuccess: (meal: MealEntry) => void;
-  onMealDelete?: (id: string) => void;
   onCancel?: () => void;
 };
 
-export function MealForm({ onSuccess, onMealDelete, onCancel }: Props) {
+export function MealForm({ onSuccess, onCancel }: Props) {
   const [step, setStep] = useState<Step>("input");
   const [previewData, setPreviewData] = useState<MealData | null>(null);
   const [isImageSource, setIsImageSource] = useState(false);
@@ -92,7 +91,6 @@ export function MealForm({ onSuccess, onMealDelete, onCancel }: Props) {
   const [supplement, setSupplement] = useState("");
 
   const [error, setError] = useState<string | null>(null);
-  const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
 
   // presets
   const [presets, setPresets] = useState<Preset[]>(() => loadPresets());
@@ -264,24 +262,6 @@ export function MealForm({ onSuccess, onMealDelete, onCancel }: Props) {
     }
   }
 
-  // --- delete latest ---
-
-  async function handleDeleteLatest() {
-    try {
-      const res = await fetch("/api/meals/latest", { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) {
-        setDeleteMsg(`⚠ ${data.error ?? "削除に失敗しました"}`);
-      } else {
-        setDeleteMsg(`削除しました: ${data.name}`);
-        onMealDelete?.(data.id);
-      }
-    } catch {
-      setDeleteMsg("削除に失敗しました");
-    }
-    setTimeout(() => setDeleteMsg(null), 3000);
-  }
-
   // --- render: analyzing ---
 
   if (step === "analyzing") {
@@ -372,8 +352,6 @@ export function MealForm({ onSuccess, onMealDelete, onCancel }: Props) {
           </Button>
         </div>
 
-        <Separator />
-        <DeleteLatestRow onDelete={handleDeleteLatest} msg={deleteMsg} />
       </div>
     );
   }
@@ -596,9 +574,6 @@ export function MealForm({ onSuccess, onMealDelete, onCancel }: Props) {
         </TabsContent>
       </Tabs>
 
-      <Separator />
-      <DeleteLatestRow onDelete={handleDeleteLatest} msg={deleteMsg} />
-
       {onCancel && (
         <div className="flex justify-end">
           <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
@@ -610,24 +585,3 @@ export function MealForm({ onSuccess, onMealDelete, onCancel }: Props) {
   );
 }
 
-function DeleteLatestRow({
-  onDelete,
-  msg,
-}: {
-  onDelete: () => void;
-  msg: string | null;
-}) {
-  return (
-    <div className="flex items-center justify-between min-h-4">
-      <button
-        type="button"
-        onClick={onDelete}
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-        直近の食事を削除
-      </button>
-      {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
-    </div>
-  );
-}

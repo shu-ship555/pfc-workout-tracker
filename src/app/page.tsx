@@ -67,6 +67,10 @@ export default function Home() {
     setMeals((prev) => prev.filter((m) => m.id !== id));
   }
 
+  function handleMealUpdate(meal: MealEntry) {
+    setMeals((prev) => prev.map((m) => (m.id === meal.id ? meal : m)));
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="border-b bg-card">
@@ -75,21 +79,22 @@ export default function Home() {
             <Dumbbell className="h-6 w-6 text-primary" />
             <h1 className="text-lg font-bold tracking-tight">PFC Workout Tracker</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
             <Dialog open={mealOpen} onOpenChange={setMealOpen}>
               <DialogTrigger render={<Button size="sm" variant="outline" className="h-auto pt-1 pb-1.5" />}>
                 <Utensils className="h-4 w-4 mr-1" />
                 食事を追加
               </DialogTrigger>
-              <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-lg">
+              <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-lg flex flex-col max-h-[90dvh]">
                 <DialogHeader>
                   <DialogTitle>食事を記録</DialogTitle>
                 </DialogHeader>
-                <MealForm
-                  onSuccess={handleMealAdd}
-                  onMealDelete={handleMealDelete}
-                  onCancel={() => setMealOpen(false)}
-                />
+                <div className="overflow-y-auto flex-1 min-h-0">
+                  <MealForm
+                    onSuccess={handleMealAdd}
+                    onCancel={() => setMealOpen(false)}
+                  />
+                </div>
               </DialogContent>
             </Dialog>
             <Dialog open={open} onOpenChange={setOpen}>
@@ -127,7 +132,7 @@ export default function Home() {
             筋トレを追加
           </Button>
         </div>
-        <div className="hidden sm:flex flex-col items-end gap-2">
+        <div className="hidden sm:flex flex-col items-stretch gap-2">
           <Button
             size="lg"
             variant="outline"
@@ -149,7 +154,7 @@ export default function Home() {
       </div>
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-5 pb-24 sm:pb-6 space-y-6">
-        <PFCSummary meals={meals} lifeLogs={lifeLogs} />
+        <PFCSummary meals={meals} lifeLogs={lifeLogs} onMealDelete={handleMealDelete} onMealUpdate={handleMealUpdate} />
 
         <Separator className="mt-10 mb-12" />
 

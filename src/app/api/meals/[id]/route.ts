@@ -1,0 +1,38 @@
+import { NextResponse } from "next/server";
+import { deleteMeal, updateMeal } from "@/lib/notion";
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await deleteMeal(id);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await req.json();
+    const meal = await updateMeal(id, {
+      name: String(body.name),
+      date: String(body.date),
+      kcal: Number(body.kcal) || 0,
+      protein: Number(body.protein) || 0,
+      fat: Number(body.fat) || 0,
+      carb: Number(body.carb) || 0,
+    });
+    return NextResponse.json(meal);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

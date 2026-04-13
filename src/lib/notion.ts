@@ -117,6 +117,25 @@ export async function createMeal(data: Omit<MealEntry, "id">): Promise<MealEntry
   return pageToMeal(page);
 }
 
+export async function deleteMeal(id: string): Promise<void> {
+  await notion.pages.update({ page_id: id, archived: true });
+}
+
+export async function updateMeal(id: string, data: Omit<MealEntry, "id">): Promise<MealEntry> {
+  const page = await notion.pages.update({
+    page_id: id,
+    properties: {
+      Name: { title: [{ text: { content: data.name } }] },
+      Date: { date: { start: data.date } },
+      Kcal: { number: data.kcal },
+      Protein: { number: data.protein },
+      Fat: { number: data.fat },
+      Carb: { number: data.carb },
+    },
+  });
+  return pageToMeal(page);
+}
+
 export async function deleteLatestMeal(): Promise<{ id: string; name: string } | null> {
   const response = await notion.databases.query({
     database_id: FOOD_DB,
