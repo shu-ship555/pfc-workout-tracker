@@ -76,9 +76,11 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {IS_DEMO && (
-        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-center gap-1.5 py-1.5 px-4 leading-snug">
-          <FlaskConical className="h-3.5 w-3.5 shrink-0" />
-          デモモード — 表示データはサンプルです。変更はページ再読み込みでリセットされます。
+        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs py-1.5 leading-snug">
+          <div className="max-w-5xl mx-auto px-4 flex items-center gap-1.5">
+            <FlaskConical className="h-3.5 w-3.5 shrink-0" />
+            デモモード — 表示データはサンプルです。変更はページ再読み込みでリセットされます。
+          </div>
         </div>
       )}
       <header className="border-b bg-card">
