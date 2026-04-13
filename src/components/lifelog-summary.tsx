@@ -269,29 +269,23 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
               <div className="flex items-center gap-1 mt-1 text-muted-foreground">
                 <RefreshCw className="h-4 w-4 animate-spin" />
               </div>
-            ) : moodSelect && latest.mood != null ? (
-              <>
-                <p className={`text-xl font-bold font-mono mt-0.5 ${getMoodColorClass(latest.mood)}`}>
-                  {latest.mood}
-                  <span className="text-xs font-normal ml-0.5">/ 10</span>
-                </p>
-                <MoodDots mood={latest.mood} />
-              </>
             ) : (
-              <Select
-                value={moodSelect}
-                onValueChange={handleMoodChange}
-                disabled={saving}
-              >
-                <SelectTrigger className="h-8 mt-0.5 text-xs border-0 bg-transparent px-0 shadow-none focus:ring-0">
-                  <SelectValue placeholder="未入力" />
-                </SelectTrigger>
-                <SelectContent className="min-w-max">
-                  {moodOptions.map((opt) => (
-                    <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <>
+                <Select value={moodSelect} onValueChange={handleMoodChange}>
+                  <div className="flex items-baseline gap-1 mt-0.5">
+                    <SelectTrigger className={`h-auto text-xl font-bold font-mono border-0 bg-transparent px-0 shadow-none focus:ring-0 w-auto ${moodSelect && latest.mood != null ? getMoodColorClass(latest.mood) : "text-muted-foreground"}`}>
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
+                    <span className="text-xs font-normal text-muted-foreground">/ 10</span>
+                  </div>
+                  <SelectContent className="min-w-max">
+                    {moodOptions.map((opt) => (
+                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {moodSelect && latest.mood != null && <MoodDots mood={latest.mood} />}
+              </>
             )}
           </div>
 
