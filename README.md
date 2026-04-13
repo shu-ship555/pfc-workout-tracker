@@ -84,14 +84,28 @@ src/
 
 ### 必要な環境変数
 
-`.env.local` に以下を設定する。
+`.env.local` に以下を設定する。テンプレートファイルをコピーして使うと便利。
+
+```bash
+cp .env.local.example .env.local
+```
+
+`.env.local` に実際の値を入力する。
 
 ```
 NOTION_API_KEY=your_notion_integration_token
 NOTION_WORKOUT_DATABASE_ID=your_workout_db_id
 NOTION_FOOD_DATABASE_ID=your_food_db_id
 NOTION_LIFELOG_DATABASE_ID=your_lifelog_db_id
+GEMINI_API_KEY=your_gemini_api_key
 ```
+
+> `.env.local` はgit管理対象外のため、各自で作成すること。
+
+### Vercelへのデプロイ
+
+Vercelダッシュボードの **Settings → Environment Variables** で上記の変数を設定する。
+コードの変更は不要で、Vercelがビルド・実行時に自動で環境変数を注入する。
 
 ### Notion DBスキーマ
 
