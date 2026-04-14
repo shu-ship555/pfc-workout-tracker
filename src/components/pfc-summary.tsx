@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Trash2, ChevronDown, ChevronUp, Pencil, Check, X } from "lucide-react";
 import type { MealEntry, LifeLogEntry } from "@/lib/types";
@@ -67,11 +68,12 @@ type EditData = { name: string; kcal: number; protein: number; fat: number; carb
 type Props = {
   meals: MealEntry[];
   lifeLogs: LifeLogEntry[];
+  loading?: boolean;
   onMealDelete?: (id: string) => void;
   onMealUpdate?: (meal: MealEntry) => void;
 };
 
-export function PFCSummary({ meals, lifeLogs, onMealDelete, onMealUpdate }: Props) {
+export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdate }: Props) {
   const [period, setPeriod] = useState<Period>("today");
   const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
   const [showList, setShowList] = useState(false);
@@ -134,6 +136,24 @@ export function PFCSummary({ meals, lifeLogs, onMealDelete, onMealUpdate }: Prop
     } finally {
       setSavingId(null);
     }
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <Skeleton className="h-8 w-64" />
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-16 rounded-lg" />
+            ))}
+          </div>
+          <Skeleton className="h-7 w-full mt-3" />
+        </CardContent>
+      </Card>
+    );
   }
 
   const filtered = filterMeals(meals, period);

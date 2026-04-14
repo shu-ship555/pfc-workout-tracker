@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -26,7 +27,7 @@ import { getMoodColorClass, getMoodDotClass, CHART_COLORS } from "@/lib/color-co
 import { formatLogDate, jstDaysAgo } from "@/lib/date-utils";
 import { Moon, Sun, Cloud, Thermometer, Droplets, Footprints, MapPin, Smile, Flame, RefreshCw } from "lucide-react";
 
-type Props = { logs: LifeLogEntry[]; onRefresh?: () => Promise<void> };
+type Props = { logs: LifeLogEntry[]; loading?: boolean; onRefresh?: () => Promise<void> };
 
 function MoodDots({ mood }: { mood: number }) {
   const dotColor = getMoodDotClass(mood);
@@ -64,7 +65,7 @@ const LOG_TOOLTIP_DEFS: { key: string; label: string; color: string; format: (v:
   { key: "steps",   label: "歩数",     color: CHART_COLORS.steps,   format: (v) => `${v.toLocaleString()} 歩` },
 ];
 
-export function LifeLogSummary({ logs, onRefresh }: Props) {
+export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
   const latest = logs[0] ?? null;
   const [moodOptions, setMoodOptions] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -102,6 +103,25 @@ export function LifeLogSummary({ logs, onRefresh }: Props) {
       tempMin: log.tempMin,
     }))
     .filter((d) => d.mood != null || d.sleep != null || d.steps != null);
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <Skeleton className="h-5 w-24" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-px w-full mt-4 mb-6" />
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-16 rounded-lg" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!latest) {
     return (

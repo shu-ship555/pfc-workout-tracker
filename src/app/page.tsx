@@ -18,6 +18,7 @@ import { LifeLogSummary } from "@/components/lifelog-summary";
 import { MealForm } from "@/components/meal-form";
 import type { WorkoutEntry, MealEntry, LifeLogEntry } from "@/lib/types";
 import { Plus, Dumbbell, Utensils, FlaskConical } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
@@ -164,25 +165,33 @@ export default function Home() {
       </div>
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-5 pb-24 sm:pb-6 space-y-6">
-        <PFCSummary meals={meals} lifeLogs={lifeLogs} onMealDelete={handleMealDelete} onMealUpdate={handleMealUpdate} />
+        <PFCSummary meals={meals} lifeLogs={lifeLogs} loading={loading} onMealDelete={handleMealDelete} onMealUpdate={handleMealUpdate} />
 
         <Separator className="mt-10 mb-12" />
 
-        <LifeLogSummary logs={lifeLogs} onRefresh={fetchLifeLogs} />
+        <LifeLogSummary logs={lifeLogs} loading={loading} onRefresh={fetchLifeLogs} />
 
         <Separator className="mt-10 mb-12" />
 
         <WorkoutChart workouts={workouts} />
 
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium">筋トレ記録</h2>
-          <p className="text-xs text-muted-foreground">
-            {listDisplay ? (
-              <>{listDisplay.label} <span className="text-foreground/40 mx-0.5">|</span> {listDisplay.count} / {workouts.length} 件</>
-            ) : (
-              <>{workouts.length} 件</>
-            )}
-          </p>
+          {loading ? (
+            <Skeleton className="h-4 w-16" />
+          ) : (
+            <h2 className="text-sm font-medium">筋トレ記録</h2>
+          )}
+          {loading ? (
+            <Skeleton className="h-4 w-36" />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {listDisplay ? (
+                <>{listDisplay.label} <span className="text-foreground/40 mx-0.5">|</span> {listDisplay.count} / {workouts.length} 件</>
+              ) : (
+                <>{workouts.length} 件</>
+              )}
+            </p>
+          )}
         </div>
 
         <WorkoutList
