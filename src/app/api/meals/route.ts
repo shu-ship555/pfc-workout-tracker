@@ -6,8 +6,20 @@ import { DEMO_MEALS, generateDemoId } from "@/lib/demo-data";
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
+function shiftDateStr(dateStr: string, days: number): string {
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().split("T")[0];
+}
+
 export async function GET() {
-  if (IS_DEMO) return NextResponse.json(DEMO_MEALS);
+  if (IS_DEMO) {
+    const today = jstToday();
+    const maxDate = DEMO_MEALS.reduce((max, m) => (m.date > max ? m.date : max), DEMO_MEALS[0].date);
+    const shift = Math.round((Date.parse(today) - Date.parse(maxDate)) / 86400000);
+    const meals = shift === 0 ? DEMO_MEALS : DEMO_MEALS.map((m) => ({ ...m, date: shiftDateStr(m.date, shift) }));
+    return NextResponse.json(meals);
+  }
   const meals = await listMeals();
   return NextResponse.json(meals);
 }

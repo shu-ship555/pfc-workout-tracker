@@ -1,11 +1,29 @@
 import { NextResponse } from "next/server";
 import { listWorkouts, createWorkout } from "@/lib/notion";
+import { jstDaysAgo } from "@/lib/date-utils";
 import { DEMO_WORKOUTS, generateDemoId } from "@/lib/demo-data";
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 export async function GET() {
-  if (IS_DEMO) return NextResponse.json(DEMO_WORKOUTS);
+  if (IS_DEMO) {
+    // DEMO_WORKOUTS の最新日付を「3日前」に合わせてシフト（先週のトレーニングとして表示）
+    const target = jstDaysAgo(3);
+    const maxDate = DEMO_WORKOUTS.reduce((max, w) => {
+      const d = w.created.split("T")[0];
+      return d > max ? d : max;
+    }, "0000-00-00");
+    const shift = Math.round((Date.parse(target) - Date.parse(maxDate)) / 86400000);
+    const workouts =
+      shift === 0
+        ? DEMO_WORKOUTS
+        : DEMO_WORKOUTS.map((w) => {
+            const d = new Date(w.created);
+            d.setUTCDate(d.getUTCDate() + shift);
+            return { ...w, created: d.toISOString() };
+          });
+    return NextResponse.json(workouts);
+  }
   const workouts = await listWorkouts();
   return NextResponse.json(workouts);
 }
