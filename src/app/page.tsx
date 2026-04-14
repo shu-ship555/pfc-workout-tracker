@@ -16,7 +16,7 @@ import { WorkoutChart } from "@/components/workout-chart";
 import { PFCSummary } from "@/components/pfc-summary";
 import { LifeLogSummary } from "@/components/lifelog-summary";
 import { MealForm } from "@/components/meal-form";
-import type { WorkoutEntry, MealEntry, LifeLogEntry } from "@/lib/types";
+import type { WorkoutEntry, WorkoutFormData, MealEntry, LifeLogEntry } from "@/lib/types";
 import { Plus, Dumbbell, Utensils, FlaskConical } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -30,6 +30,9 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   const [mealOpen, setMealOpen] = useState(false);
   const [listDisplay, setListDisplay] = useState<{ label: string; count: number } | null>(null);
+  const [formKey, setFormKey] = useState(0);
+  const [pendingFormData, setPendingFormData] = useState<WorkoutFormData | null>(null);
+  const [addedCount, setAddedCount] = useState(0);
 
   async function fetchLifeLogs() {
     const data: LifeLogEntry[] = await fetch("/api/lifelog").then((r) => r.ok ? r.json() : []);
@@ -51,6 +54,22 @@ export default function Home() {
   function handleAdd(entry: WorkoutEntry) {
     setWorkouts((prev) => [entry, ...prev]);
     setOpen(false);
+  }
+
+  function handleContinue(data: WorkoutFormData) {
+    setPendingFormData(data);
+    setFormKey((k) => k + 1);
+    setAddedCount((c) => c + 1);
+    setOpen(true);
+  }
+
+  function handleWorkoutOpenChange(isOpen: boolean) {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setPendingFormData(null);
+      setFormKey((k) => k + 1);
+      setAddedCount(0);
+    }
   }
 
   function handleUpdate(entry: WorkoutEntry) {
@@ -108,7 +127,7 @@ export default function Home() {
                 </div>
               </DialogContent>
             </Dialog>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={handleWorkoutOpenChange}>
               <DialogTrigger render={<Button size="sm" className="h-auto pt-1 pb-1.5 hover:bg-primary/80" />}>
                 <Plus className="h-4 w-4 mr-1" />
                 筋トレを追加
@@ -117,7 +136,14 @@ export default function Home() {
                 <DialogHeader>
                   <DialogTitle>新しい記録を追加</DialogTitle>
                 </DialogHeader>
-                <WorkoutForm onSuccess={handleAdd} onCancel={() => setOpen(false)} />
+                <WorkoutForm
+                  key={formKey}
+                  initialData={pendingFormData ?? undefined}
+                  addedCount={addedCount}
+                  onSuccess={handleAdd}
+                  onContinue={handleContinue}
+                  onCancel={() => handleWorkoutOpenChange(false)}
+                />
               </DialogContent>
             </Dialog>
           </div>

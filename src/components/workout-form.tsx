@@ -1,16 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import type { WorkoutEntry, WorkoutFormData } from "@/lib/types";
 import { PartSelect, ExerciseSelect } from "@/components/workout-selects";
+import { Check } from "lucide-react";
 
 type Props = {
   initial?: WorkoutEntry;
+  initialData?: WorkoutFormData;
+  addedCount?: number;
   onSuccess: (entry: WorkoutEntry) => void;
+  onContinue?: (data: WorkoutFormData) => void;
   onCancel?: () => void;
 };
 
@@ -28,14 +32,24 @@ const defaultForm: WorkoutFormData = {
   notStable: false,
 };
 
-export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
+export function WorkoutForm({ initial, initialData, addedCount, onSuccess, onContinue, onCancel }: Props) {
   const [form, setForm] = useState<WorkoutFormData>(() => {
-    if (!initial) return defaultForm;
-    const { id: _id, created: _created, ...rest } = initial;
-    return rest;
+    if (initial) { const { id: _id, created: _created, ...rest } = initial; return rest; }
+    if (initialData) return initialData;
+    return defaultForm;
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [continuousMode, setContinuousMode] = useState(!!initialData);
+  const [setStr, setSetStr] = useState(String(form.set || ""));
+  const [repStr, setRepStr] = useState(String(form.rep || ""));
+  const [justAdded, setJustAdded] = useState(!!initialData);
+
+  useEffect(() => {
+    if (!justAdded) return;
+    const t = setTimeout(() => setJustAdded(false), 2000);
+    return () => clearTimeout(t);
+  }, [justAdded]);
 
   const setField = <K extends keyof WorkoutFormData>(key: K, value: WorkoutFormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -62,6 +76,7 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
       }
       const entry: WorkoutEntry = await res.json();
       onSuccess(entry);
+      if (continuousMode) onContinue?.(form);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "保存に失敗しました");
     } finally {
@@ -101,8 +116,11 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
               id="set"
               type="number"
               min={1}
-              value={form.set}
-              onChange={(e) => setField("set", Number(e.target.value))}
+              value={setStr}
+              onChange={(e) => {
+                setSetStr(e.target.value);
+                if (e.target.value !== "") setField("set", Number(e.target.value));
+              }}
             />
           </div>
           <div className="space-y-1">
@@ -111,8 +129,11 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
               id="rep"
               type="number"
               min={1}
-              value={form.rep}
-              onChange={(e) => setField("rep", Number(e.target.value))}
+              value={repStr}
+              onChange={(e) => {
+                setRepStr(e.target.value);
+                if (e.target.value !== "") setField("rep", Number(e.target.value));
+              }}
             />
           </div>
           <div className="space-y-1">
@@ -176,15 +197,44 @@ export function WorkoutForm({ initial, onSuccess, onCancel }: Props) {
           <p className="text-xs text-destructive">{error}</p>
         )}
 
-        <div className="flex gap-2 justify-end">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              キャンセル
-            </Button>
+        {continuousMode && (addedCount ?? 0) > 0 && (
+          <div className={`flex items-center gap-1.5 text-xs rounded-md px-3 py-2 transition-colors duration-500 ${
+            justAdded
+              ? "bg-green-500/10 text-green-600 dark:text-green-400"
+              : "bg-muted/60 text-muted-foreground"
+          }`}>
+            {justAdded && <Check className="h-3.5 w-3.5 shrink-0" />}
+            <span>{justAdded ? "追加しました" : "連続追加中"}</span>
+            <span className="ml-auto font-mono font-medium">計 {addedCount} 件</span>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          {!initial && (
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none text-muted-foreground">
+              <div className="relative inline-flex h-4 w-7 shrink-0">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={continuousMode}
+                  onChange={(e) => setContinuousMode(e.target.checked)}
+                />
+                <span className="h-4 w-7 rounded-full bg-muted peer-checked:bg-primary transition-colors" />
+                <span className="absolute left-0.5 top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform peer-checked:translate-x-3" />
+              </div>
+              連続入力
+            </label>
           )}
-          <Button type="submit" disabled={loading || !form.exercise}>
-            {loading ? "保存中..." : initial ? "更新" : "追加"}
-          </Button>
+          <div className="flex gap-2 ml-auto">
+            {onCancel && (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                キャンセル
+              </Button>
+            )}
+            <Button type="submit" disabled={loading || !form.exercise}>
+              {loading ? "保存中..." : initial ? "更新" : "追加"}
+            </Button>
+          </div>
         </div>
       </div>
     </form>
