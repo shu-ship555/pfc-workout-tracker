@@ -155,14 +155,14 @@ export default function Home() {
         <div className="sm:hidden border-t bg-card px-4 pt-3 pb-4 grid grid-cols-2 gap-2">
           <Button
             variant="outline"
-            className="w-full h-auto pt-2 pb-3"
+            className="w-full h-auto pt-2 pb-2.5"
             onClick={() => setMealOpen(true)}
           >
             <Utensils className="h-4 w-4 mr-1" />
             食事を追加
           </Button>
           <Button
-            className="w-full h-auto pt-2 pb-3 hover:bg-primary/80"
+            className="w-full h-auto pt-2 pb-2.5 hover:bg-primary/80"
             onClick={() => setOpen(true)}
           >
             <Plus className="h-4 w-4 mr-1" />
@@ -173,7 +173,7 @@ export default function Home() {
           <Button
             size="lg"
             variant="outline"
-            className="flex items-center gap-1 shadow-lg rounded-lg h-auto px-6 pt-1.5 pb-2.5 hover:shadow-xl hover:scale-105"
+            className="flex items-center gap-1 shadow-lg rounded-lg h-auto px-6 pt-1.5 pb-2 hover:shadow-xl hover:scale-105"
             onClick={() => setMealOpen(true)}
           >
             <Utensils className="h-5 w-5" />
@@ -181,7 +181,7 @@ export default function Home() {
           </Button>
           <Button
             size="lg"
-            className="flex items-center gap-1 shadow-lg rounded-lg h-auto px-6 pt-1.5 pb-2.5 hover:bg-primary/80 hover:shadow-xl hover:scale-105"
+            className="flex items-center gap-1 shadow-lg rounded-lg h-auto px-6 pt-1.5 pb-2 hover:bg-primary/80 hover:shadow-xl hover:scale-105"
             onClick={() => setOpen(true)}
           >
             <Plus className="h-5 w-5" />

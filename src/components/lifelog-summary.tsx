@@ -24,7 +24,7 @@ import {
 import type { LifeLogEntry } from "@/lib/types";
 import { ChartTooltip } from "@/components/chart-tooltip";
 import { getMoodColorClass, getMoodDotClass, CHART_COLORS } from "@/lib/color-constants";
-import { formatLogDate, jstDaysAgo } from "@/lib/date-utils";
+import { formatLogDate, jstDaysAgo, normalizeDate } from "@/lib/date-utils";
 import { Moon, Sun, Cloud, Thermometer, Droplets, Footprints, MapPin, Smile, Flame, RefreshCw } from "lucide-react";
 
 type Props = { logs: LifeLogEntry[]; loading?: boolean; onRefresh?: () => Promise<void> };
@@ -65,6 +65,18 @@ const LOG_TOOLTIP_DEFS: { key: string; label: string; color: string; format: (v:
   { key: "steps",   label: "歩数",     color: CHART_COLORS.steps,   format: (v) => `${v.toLocaleString()} 歩` },
 ];
 
+function InfoCard({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg px-3 pt-1.5 pb-2 bg-muted/50">
+      <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
   const latest = logs[0] ?? null;
   const [moodOptions, setMoodOptions] = useState<string[]>([]);
@@ -92,7 +104,7 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
   // 最新90日分に絞り、古い順に並べてチャートデータを生成
   const ninetyDaysAgoStr = jstDaysAgo(90);
   const chartData = [...logs]
-    .filter((log) => log.date.replace(/\//g, "-") >= ninetyDaysAgoStr)
+    .filter((log) => normalizeDate(log.date) >= ninetyDaysAgoStr)
     .reverse()
     .map((log) => ({
       date: formatLogDate(log.date),
@@ -279,12 +291,7 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
 
         <Separator className="mt-4 mb-6" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {/* 気分 */}
-          <div className="rounded-lg px-3 pt-1.5 pb-2 bg-muted/50">
-            <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <Smile className="h-3.5 w-3.5" />
-              気分
-            </div>
+          <InfoCard icon={<Smile className="h-3.5 w-3.5" />} label="気分">
             {saving ? (
               <div className="flex items-center gap-1 mt-1 text-muted-foreground">
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -307,29 +314,17 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
                 {moodSelect && latest.mood != null && <MoodDots mood={latest.mood} />}
               </>
             )}
-          </div>
+          </InfoCard>
 
-          {/* 入眠・起床 */}
-          <div className="rounded-lg px-3 pt-1.5 pb-2 bg-muted/50">
-            <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <Moon className="h-3.5 w-3.5" />
-              入眠 / 起床
-            </div>
-            <p className="text-sm font-mono mt-0.5">
-              {latest.sleepTime || "—"}
-            </p>
+          <InfoCard icon={<Moon className="h-3.5 w-3.5" />} label="入眠 / 起床">
+            <p className="text-sm font-mono mt-0.5">{latest.sleepTime || "—"}</p>
             <div className="flex items-center gap-1 mt-0.5">
               <Sun className="h-3 w-3 text-muted-foreground" />
               <p className="text-sm font-mono">{latest.wakeTime || "—"}</p>
             </div>
-          </div>
+          </InfoCard>
 
-          {/* 天気・気温 */}
-          <div className="rounded-lg px-3 pt-1.5 pb-2 bg-muted/50">
-            <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <Cloud className="h-3.5 w-3.5" />
-              天気 / 気温
-            </div>
+          <InfoCard icon={<Cloud className="h-3.5 w-3.5" />} label="天気 / 気温">
             <p className="text-sm mt-0.5">{latest.weather || "—"}</p>
             {latest.tempMax != null && latest.tempMin != null ? (
               <div className="flex items-center gap-1 mt-0.5">
@@ -339,26 +334,19 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
                 </p>
               </div>
             ) : null}
-          </div>
+          </InfoCard>
 
-          {/* 歩数・湿度 */}
-          <div className="rounded-lg px-3 pt-1.5 pb-2 bg-muted/50">
-            <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <Footprints className="h-3.5 w-3.5" />
-              歩数 / 湿度
-            </div>
+          <InfoCard icon={<Footprints className="h-3.5 w-3.5" />} label="歩数 / 湿度">
             <p className="text-sm font-mono mt-0.5">
               {latest.steps != null ? `${latest.steps.toLocaleString()} 歩` : "—"}
             </p>
             {latest.humidity != null ? (
               <div className="flex items-center gap-1 mt-0.5">
                 <Droplets className="h-3 w-3 text-muted-foreground" />
-                <p className="text-xs font-mono text-muted-foreground">
-                  {latest.humidity}%
-                </p>
+                <p className="text-xs font-mono text-muted-foreground">{latest.humidity}%</p>
               </div>
             ) : null}
-          </div>
+          </InfoCard>
         </div>
 
         {(latest.city || latest.consumedKcal != null) && (

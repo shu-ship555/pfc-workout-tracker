@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { DateRangeInput } from "@/components/date-range-input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkoutForm } from "@/components/workout-form";
 import { PartSelect, ExerciseSelect } from "@/components/workout-selects";
@@ -202,21 +202,12 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
     <>
       {/* フィルターパネル */}
       <div className="flex flex-wrap items-end gap-2 mb-3">
-        <div className="flex items-center gap-1">
-          <Input
-            type="date"
-            className="h-8 w-36 text-xs"
-            value={filterDateFrom}
-            onChange={(e) => setFilterDateFrom(e.target.value)}
-          />
-          <span className="text-xs text-muted-foreground">〜</span>
-          <Input
-            type="date"
-            className="h-8 w-36 text-xs"
-            value={filterDateTo}
-            onChange={(e) => setFilterDateTo(e.target.value)}
-          />
-        </div>
+        <DateRangeInput
+          from={filterDateFrom}
+          to={filterDateTo}
+          onFromChange={setFilterDateFrom}
+          onToChange={setFilterDateTo}
+        />
         <PartSelect
           value={filterParts || "すべて"}
           onValueChange={handleFilterPartsChange}

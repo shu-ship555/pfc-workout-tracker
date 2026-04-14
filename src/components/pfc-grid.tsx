@@ -1,20 +1,14 @@
+import type { PFCValues } from "@/lib/types";
 import { PFC_COLORS } from "@/lib/color-constants";
-
-type Props = {
-  kcal: number;
-  protein: number;
-  fat: number;
-  carb: number;
-};
 
 const ITEMS = [
   { key: "kcal"    as const, label: "kcal" },
   { key: "protein" as const, label: "P" },
   { key: "fat"     as const, label: "F" },
   { key: "carb"    as const, label: "C" },
-] satisfies { key: keyof Props; label: string }[];
+] satisfies { key: keyof PFCValues; label: string }[];
 
-const COLOR_MAP: Record<keyof Props, string> = {
+const COLOR_MAP: Record<keyof PFCValues, string> = {
   kcal:    PFC_COLORS.kcal,
   protein: PFC_COLORS.protein,
   fat:     PFC_COLORS.fat,
@@ -25,8 +19,8 @@ const COLOR_MAP: Record<keyof Props, string> = {
  * PFC・カロリーをコンパクトな4列グリッドで表示するコンポーネント。
  * MealForm のプレビュー表示など小スペース向け。
  */
-export function PFCGrid({ kcal, protein, fat, carb }: Props) {
-  const values: Props = { kcal, protein, fat, carb };
+export function PFCGrid({ kcal, protein, fat, carb }: PFCValues) {
+  const values: PFCValues = { kcal, protein, fat, carb };
 
   return (
     <div className="grid grid-cols-4 gap-2 text-center">

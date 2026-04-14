@@ -60,11 +60,13 @@ src/
 │   ├── workout-selects.tsx        # 部位・種目セレクトボックス
 │   ├── meal-form.tsx              # 食事記録フォーム（Gemini AI分析付き）
 │   ├── pfc-summary.tsx            # PFC集計カード
-│   ├── pfc-grid.tsx               # PFCグリッド表示
+│   ├── pfc-grid.tsx               # PFCグリッド表示（コンパクト4列・読み取り専用）
+│   ├── pfc-input-grid.tsx         # PFC数値入力グリッド（4列・編集用）
+│   ├── date-range-input.tsx       # 日付範囲選択コンポーネント
 │   ├── lifelog-summary.tsx        # ライフログComposedChart
 │   └── chart-tooltip.tsx          # カスタムRechartsツールチップ
 └── lib/
-    ├── types.ts                   # WorkoutEntry / MealEntry / LifeLogEntry
+    ├── types.ts                   # WorkoutEntry / MealEntry / LifeLogEntry / PFCValues / MealLike
     ├── notion.ts                  # NotionAPIクライアント・クエリ関数
     ├── exercises.ts               # PARTS・EXERCISESマッピング
     ├── gemini.ts                  # Google Gemini APIクライアント

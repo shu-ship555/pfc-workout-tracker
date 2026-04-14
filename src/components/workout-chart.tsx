@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { DateRangeInput } from "@/components/date-range-input";
 import {
   LineChart,
   Line,
@@ -83,21 +83,13 @@ export function WorkoutChart({ workouts }: Props) {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Input
-                type="date"
-                className="h-8 w-32 text-xs"
-                value={filterDateFrom}
-                onChange={(e) => setFilterDateFrom(e.target.value)}
-              />
-              <span className="text-xs text-muted-foreground">〜</span>
-              <Input
-                type="date"
-                className="h-8 w-32 text-xs"
-                value={filterDateTo}
-                onChange={(e) => setFilterDateTo(e.target.value)}
-              />
-            </div>
+            <DateRangeInput
+              from={filterDateFrom}
+              to={filterDateTo}
+              onFromChange={setFilterDateFrom}
+              onToChange={setFilterDateTo}
+              inputClassName="h-8 w-32 text-xs"
+            />
             <PartSelect
               value={part}
               onValueChange={handlePartChange}

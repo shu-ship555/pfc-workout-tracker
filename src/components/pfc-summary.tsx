@@ -4,11 +4,12 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PFCInputGrid } from "@/components/pfc-input-grid";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Trash2, ChevronDown, ChevronUp, Pencil, Check, X } from "lucide-react";
-import type { MealEntry, LifeLogEntry } from "@/lib/types";
+import type { MealEntry, LifeLogEntry, MealLike } from "@/lib/types";
 import { PFC_COLORS } from "@/lib/color-constants";
-import { jstDaysAgo } from "@/lib/date-utils";
+import { jstDaysAgo, normalizeDate } from "@/lib/date-utils";
 
 type Period = "today" | "yesterday" | "3days" | "7days";
 
@@ -19,51 +20,28 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: "7days",     label: "過去1週間" },
 ];
 
-// "2026/04/11" → "2026-04-11"
-function normalizeLifeLogDate(date: string): string {
-  return date.replace(/\//g, "-");
+function getPeriodDates(period: Period): string[] {
+  switch (period) {
+    case "today":     return [jstDaysAgo(0)];
+    case "yesterday": return [jstDaysAgo(1)];
+    case "3days":     return [jstDaysAgo(1), jstDaysAgo(2), jstDaysAgo(3)];
+    case "7days":     return Array.from({ length: 7 }, (_, i) => jstDaysAgo(i + 1));
+  }
 }
 
 function filterMeals(meals: MealEntry[], period: Period): MealEntry[] {
-  switch (period) {
-    case "today":
-      return meals.filter((m) => m.date === jstDaysAgo(0));
-    case "yesterday":
-      return meals.filter((m) => m.date === jstDaysAgo(1));
-    case "3days": {
-      const dates = new Set([jstDaysAgo(1), jstDaysAgo(2), jstDaysAgo(3)]);
-      return meals.filter((m) => dates.has(m.date));
-    }
-    case "7days": {
-      const dates = new Set(Array.from({ length: 7 }, (_, i) => jstDaysAgo(i + 1)));
-      return meals.filter((m) => dates.has(m.date));
-    }
-  }
+  const dates = new Set(getPeriodDates(period));
+  return meals.filter((m) => dates.has(m.date));
 }
 
 function filterConsumedKcal(logs: LifeLogEntry[], period: Period): number | null {
-  let dates: string[];
-  switch (period) {
-    case "today":
-      dates = [jstDaysAgo(0)];
-      break;
-    case "yesterday":
-      dates = [jstDaysAgo(1)];
-      break;
-    case "3days":
-      dates = [jstDaysAgo(1), jstDaysAgo(2), jstDaysAgo(3)];
-      break;
-    case "7days":
-      dates = Array.from({ length: 7 }, (_, i) => jstDaysAgo(i + 1));
-      break;
-  }
-  const dateSet = new Set(dates);
-  const matched = logs.filter((l) => dateSet.has(normalizeLifeLogDate(l.date)) && l.consumedKcal != null);
+  const dates = new Set(getPeriodDates(period));
+  const matched = logs.filter((l) => dates.has(normalizeDate(l.date)) && l.consumedKcal != null);
   if (matched.length === 0) return null;
   return matched.reduce((s, l) => s + (l.consumedKcal ?? 0), 0);
 }
 
-type EditData = { name: string; kcal: number; protein: number; fat: number; carb: number };
+type EditData = MealLike;
 
 type Props = {
   meals: MealEntry[];
@@ -248,21 +226,12 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
                         className="h-7 text-xs"
                         placeholder="料理名"
                       />
-                      <div className="grid grid-cols-4 gap-1.5">
-                        {([ { key: "kcal", label: "kcal" }, { key: "protein", label: "P(g)" }, { key: "fat", label: "F(g)" }, { key: "carb", label: "C(g)" } ] as const).map(({ key, label }) => (
-                          <div key={key} className="space-y-0.5">
-                            <p className="text-[10px] text-muted-foreground">{label}</p>
-                            <Input
-                              type="number"
-                              min={0}
-                              step={0.1}
-                              value={editData[key] || ""}
-                              onChange={(e) => setEditData((d) => d && { ...d, [key]: Number(e.target.value) })}
-                              className="h-7 text-xs px-2"
-                            />
-                          </div>
-                        ))}
-                      </div>
+                      <PFCInputGrid
+                        values={editData}
+                        onChange={(key, value) => setEditData((d) => d && { ...d, [key]: value })}
+                        inputClassName="h-7 text-xs px-2"
+                        labelClassName="text-[10px] text-muted-foreground"
+                      />
                       <div className="flex justify-end gap-1.5">
                         <button type="button" onClick={cancelEdit} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded border">
                           <X className="h-3 w-3" />キャンセル

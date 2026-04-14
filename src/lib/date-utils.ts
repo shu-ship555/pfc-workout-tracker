@@ -1,3 +1,8 @@
+/** "YYYY/MM/DD" 形式の日付を "YYYY-MM-DD" に正規化する */
+export function normalizeDate(date: string): string {
+  return date.replace(/\//g, "-");
+}
+
 /** JST今日の日付を YYYY-MM-DD で返す */
 export function jstToday(): string {
   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];

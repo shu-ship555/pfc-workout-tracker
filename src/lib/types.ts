@@ -1,3 +1,12 @@
+export type PFCValues = {
+  kcal: number;
+  protein: number;
+  fat: number;
+  carb: number;
+};
+
+export type MealLike = { name: string } & PFCValues;
+
 export type WorkoutEntry = {
   id: string;
   created: string;

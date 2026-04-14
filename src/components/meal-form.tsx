@@ -17,7 +17,8 @@ import {
   ChevronUp,
   AlertCircle,
 } from "lucide-react";
-import type { MealEntry } from "@/lib/types";
+import type { MealEntry, MealLike } from "@/lib/types";
+import { PFCInputGrid } from "@/components/pfc-input-grid";
 import type { MealAnalysis } from "@/lib/gemini";
 import { PFCGrid } from "@/components/pfc-grid";
 
@@ -60,13 +61,7 @@ function persistPresets(presets: Preset[]) {
 
 // --- Component ---
 
-type MealData = {
-  name: string;
-  kcal: number;
-  protein: number;
-  fat: number;
-  carb: number;
-};
+type MealData = MealLike;
 
 type Step = "input" | "analyzing" | "error" | "preview" | "saving";
 
@@ -449,28 +444,10 @@ export function MealForm({ onSuccess, onCancel }: Props) {
               onChange={(e) => setDirectInput((p) => ({ ...p, name: e.target.value }))}
               className="text-sm h-8"
             />
-            <div className="grid grid-cols-4 gap-1.5">
-              {(
-                [
-                  { key: "kcal",    label: "kcal" },
-                  { key: "protein", label: "P(g)" },
-                  { key: "fat",     label: "F(g)" },
-                  { key: "carb",    label: "C(g)" },
-                ] as const
-              ).map(({ key, label }) => (
-                <div key={key} className="space-y-0.5">
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.1}
-                    value={directInput[key] || ""}
-                    onChange={(e) => setDirectInput((p) => ({ ...p, [key]: Number(e.target.value) }))}
-                    className="text-xs h-8 px-2"
-                  />
-                </div>
-              ))}
-            </div>
+            <PFCInputGrid
+              values={directInput}
+              onChange={(key, value) => setDirectInput((p) => ({ ...p, [key]: value }))}
+            />
             {directError && <p className="text-xs text-destructive">{directError}</p>}
             <Button
               type="button"
@@ -542,35 +519,10 @@ export function MealForm({ onSuccess, onCancel }: Props) {
                       }
                       className="text-sm h-8"
                     />
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {(
-                        [
-                          { key: "kcal",    label: "kcal" },
-                          { key: "protein", label: "P(g)" },
-                          { key: "fat",     label: "F(g)" },
-                          { key: "carb",    label: "C(g)" },
-                        ] as const
-                      ).map(({ key, label }) => (
-                        <div key={key} className="space-y-0.5">
-                          <p className="text-xs text-muted-foreground">
-                            {label}
-                          </p>
-                          <Input
-                            type="number"
-                            min={0}
-                            step={0.1}
-                            value={newPreset[key] || ""}
-                            onChange={(e) =>
-                              setNewPreset((p) => ({
-                                ...p,
-                                [key]: Number(e.target.value),
-                              }))
-                            }
-                            className="text-xs h-8 px-2"
-                          />
-                        </div>
-                      ))}
-                    </div>
+                    <PFCInputGrid
+                      values={newPreset}
+                      onChange={(key, value) => setNewPreset((p) => ({ ...p, [key]: value }))}
+                    />
                     <Button
                       type="button"
                       size="sm"
