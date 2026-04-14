@@ -10,6 +10,7 @@ import {
   Zap,
   Type,
   Camera,
+  Images,
   Loader2,
   Trash2,
   Plus,
@@ -101,7 +102,8 @@ export function MealForm({ onSuccess, onCancel }: Props) {
     name: "", kcal: 0, protein: 0, fat: 0, carb: 0,
   });
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const libraryInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     return () => {
@@ -570,38 +572,68 @@ export function MealForm({ onSuccess, onCancel }: Props) {
         <TabsContent value="image" className="space-y-3 mt-3">
           <input
             type="file"
-            ref={fileInputRef}
+            ref={cameraInputRef}
+            accept="image/*"
+            capture="environment"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          <input
+            type="file"
+            ref={libraryInputRef}
             accept="image/*"
             onChange={handleImageSelect}
             className="hidden"
           />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full rounded-lg border-2 border-dashed border-border p-6 flex flex-col items-center gap-2 hover:bg-accent transition-colors"
-          >
-            {imageObjectUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
+
+          {imageObjectUrl ? (
+            <div className="space-y-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageObjectUrl}
                 alt="選択した画像"
-                className="max-h-32 rounded object-contain"
+                className="w-full max-h-40 rounded-lg object-contain bg-muted/30"
               />
-            ) : (
-              <>
-                <Camera className="h-8 w-8 text-muted-foreground" />
-                <p className="text-sm font-medium">写真を選択</p>
-                <p className="text-xs text-muted-foreground">
-                  タップしてカメラまたはライブラリから選択
-                </p>
-              </>
-            )}
-          </button>
-          {imageObjectUrl && (
-            <p className="text-xs text-muted-foreground text-center">
-              タップして画像を変更
-            </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="flex items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <Camera className="h-3.5 w-3.5" />
+                  撮り直す
+                </button>
+                <button
+                  type="button"
+                  onClick={() => libraryInputRef.current?.click()}
+                  className="flex items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <Images className="h-3.5 w-3.5" />
+                  ライブラリ
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                className="rounded-lg border-2 border-dashed border-border py-6 flex flex-col items-center gap-2 hover:bg-accent transition-colors"
+              >
+                <Camera className="h-7 w-7 text-muted-foreground" />
+                <p className="text-sm font-medium">カメラ</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => libraryInputRef.current?.click()}
+                className="rounded-lg border-2 border-dashed border-border py-6 flex flex-col items-center gap-2 hover:bg-accent transition-colors"
+              >
+                <Images className="h-7 w-7 text-muted-foreground" />
+                <p className="text-sm font-medium">ライブラリ</p>
+              </button>
+            </div>
           )}
+
           {error && <p className="text-xs text-destructive">{error}</p>}
           <Button
             type="button"
