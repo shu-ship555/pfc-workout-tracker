@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import type { WorkoutEntry, WorkoutFormData } from "@/lib/types";
 import { PartSelect, ExerciseSelect } from "@/components/workout-selects";
 import { Check } from "lucide-react";
-import { apiPost, apiPut } from "@/lib/api-client";
+import { apiPost, apiPut, getErrorMessage } from "@/lib/api-client";
 import { STATUS_COLORS } from "@/lib/color-constants";
 
 type Props = {
@@ -71,7 +71,7 @@ export function WorkoutForm({ initial, initialData, addedCount, onSuccess, onCon
       onSuccess(entry);
       if (continuousMode) onContinue?.(form);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(getErrorMessage(e, "保存に失敗しました"));
     } finally {
       setLoading(false);
     }

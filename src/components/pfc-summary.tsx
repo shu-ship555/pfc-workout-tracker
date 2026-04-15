@@ -11,6 +11,7 @@ import type { MealEntry, LifeLogEntry, MealLike } from "@/lib/types";
 import { PFC_COLORS, STATUS_COLORS } from "@/lib/color-constants";
 import { jstDaysAgo, normalizeDate } from "@/lib/date-utils";
 import { PFCSkeletonGrid } from "@/components/pfc-skeleton-grid";
+import { apiPatch, apiDelete } from "@/lib/api-client";
 
 type Period = "today" | "yesterday" | "3days" | "7days";
 
@@ -80,8 +81,10 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
   async function handleDeleteMeal(id: string) {
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/meals/${id}`, { method: "DELETE" });
-      if (res.ok) onMealDelete?.(id);
+      await apiDelete(`/api/meals/${id}`);
+      onMealDelete?.(id);
+    } catch {
+      // 削除失敗時は何もしない
     } finally {
       setDeletingId(null);
     }
@@ -101,17 +104,12 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
     if (!editData) return;
     setSavingId(id);
     try {
-      const res = await fetch(`/api/meals/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...editData, date }),
-      });
-      if (res.ok) {
-        const updated: MealEntry = await res.json();
-        onMealUpdate?.(updated);
-        setEditingId(null);
-        setEditData(null);
-      }
+      const updated = await apiPatch<MealEntry>(`/api/meals/${id}`, { ...editData, date });
+      onMealUpdate?.(updated);
+      setEditingId(null);
+      setEditData(null);
+    } catch {
+      // 更新失敗時は何もしない
     } finally {
       setSavingId(null);
     }

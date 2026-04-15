@@ -41,6 +41,7 @@ import { PartSelect, ExerciseSelect } from "@/components/workout-selects";
 import type { WorkoutEntry } from "@/lib/types";
 import { jstToday, formatDateTime } from "@/lib/date-utils";
 import { FLAG_COLORS } from "@/lib/color-constants";
+import { apiDelete } from "@/lib/api-client";
 import { Pencil, Trash2, MessageSquare, X } from "lucide-react";
 
 const DAYS_PER_PAGE = 14; // 2週間
@@ -139,7 +140,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
   async function confirmDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
-    await fetch(`/api/workouts/${deleteTarget.id}`, { method: "DELETE" });
+    await apiDelete(`/api/workouts/${deleteTarget.id}`);
     onDelete(deleteTarget.id);
     setDeleteTarget(null);
     setDeleting(false);

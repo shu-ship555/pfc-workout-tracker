@@ -22,7 +22,7 @@ import type { MealEntry, MealLike } from "@/lib/types";
 import { PFCInputGrid } from "@/components/pfc-input-grid";
 import type { MealAnalysis } from "@/lib/gemini";
 import { PFCGrid } from "@/components/pfc-grid";
-import { apiPost } from "@/lib/api-client";
+import { apiPost, getErrorMessage } from "@/lib/api-client";
 
 // --- Preset types & storage ---
 
@@ -154,7 +154,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
       const meal = await apiPost<MealEntry>("/api/meals", directInput);
       onSuccess(meal);
     } catch (e) {
-      setDirectError(e instanceof Error ? e.message : "保存に失敗しました");
+      setDirectError(getErrorMessage(e, "保存に失敗しました"));
       setDirectSaving(false);
     }
   }
@@ -187,7 +187,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
       if (fromImage) setSupplement("");
       setStep("preview");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "解析に失敗しました");
+      setError(getErrorMessage(e, "解析に失敗しました"));
       setStep("error");
     }
   }
@@ -221,7 +221,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
       setSupplementDone(true);
       setStep("preview");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "再計算に失敗しました");
+      setError(getErrorMessage(e, "再計算に失敗しました"));
       setStep("preview");
     }
   }
@@ -236,7 +236,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
       const meal = await apiPost<MealEntry>("/api/meals", previewData);
       onSuccess(meal);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(getErrorMessage(e, "保存に失敗しました"));
       setStep("preview");
     }
   }

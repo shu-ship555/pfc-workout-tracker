@@ -69,8 +69,10 @@ src/
 │   ├── lifelog-summary.tsx        # ライフログComposedChart
 │   ├── scrollable-chart.tsx       # 横スクロール可能チャートコンテナ（共通）
 │   └── chart-tooltip.tsx          # カスタムRechartsツールチップ
+├── hooks/
+│   └── use-crud-list.ts           # idベースのリストCRUD操作カスタムフック
 └── lib/
-    ├── types.ts                   # WorkoutEntry / MealEntry / LifeLogEntry / PFCValues / MealLike
+    ├── types.ts                   # WorkoutEntry / MealEntry / LifeLogEntry / PFCValues / PFC_KEYS
     ├── notion.ts                  # NotionAPIクライアント・クエリ関数
     ├── exercises.ts               # PARTS・EXERCISESマッピング
     ├── gemini.ts                  # Google Gemini APIクライアント
@@ -78,7 +80,7 @@ src/
     ├── fitbit.ts                  # Fitbit APIクライアント
     ├── date-utils.ts              # JST日付ユーティリティ
     ├── color-constants.ts         # セマンティックカラー定数（PFC/気分/ステータス等、一元管理）
-    ├── api-client.ts              # クライアントサイドfetchユーティリティ（apiPost/apiPut/apiPatch/apiDelete）
+    ├── api-client.ts              # クライアントサイドfetchユーティリティ（apiGet/apiPost/apiPut/apiPatch/apiDelete/getErrorMessage）
     ├── api-utils.ts               # IS_DEMO定数・APIエラー変換・Mealボディパース
     ├── demo-data.ts               # デモ用フィクスチャデータ・日付シフトヘルパー
     └── utils.ts                   # cn()ユーティリティ

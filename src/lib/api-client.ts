@@ -14,6 +14,12 @@ async function throwIfNotOk(res: Response): Promise<void> {
 
 const JSON_HEADERS = { "Content-Type": "application/json" } as const;
 
+export async function apiGet<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  await throwIfNotOk(res);
+  return res.json();
+}
+
 export async function apiPost<T>(url: string, data: unknown): Promise<T> {
   const res = await fetch(url, {
     method: "POST",
@@ -47,4 +53,9 @@ export async function apiPatch<T>(url: string, data: unknown): Promise<T> {
 export async function apiDelete(url: string): Promise<void> {
   const res = await fetch(url, { method: "DELETE" });
   await throwIfNotOk(res);
+}
+
+/** エラーオブジェクトから安全にメッセージを取得する */
+export function getErrorMessage(e: unknown, fallback = "エラーが発生しました"): string {
+  return e instanceof Error ? e.message : fallback;
 }

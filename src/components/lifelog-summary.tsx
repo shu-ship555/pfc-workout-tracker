@@ -28,6 +28,7 @@ import { PFCSkeletonGrid } from "@/components/pfc-skeleton-grid";
 import { getMoodColorClass, getMoodDotClass, CHART_COLORS } from "@/lib/color-constants";
 import { formatLogDate, jstDaysAgo, normalizeDate } from "@/lib/date-utils";
 import { Moon, Sun, Cloud, Thermometer, Droplets, Footprints, MapPin, Smile, Flame, RefreshCw, User } from "lucide-react";
+import { apiGet, apiPatch } from "@/lib/api-client";
 
 type Props = { logs: LifeLogEntry[]; loading?: boolean; onRefresh?: () => Promise<void> };
 
@@ -90,17 +91,13 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
   const latestWeight = logs.find((l) => l.weight != null)?.weight ?? null;
 
   useEffect(() => {
-    fetch("/api/lifelog/options").then((r) => r.json()).then(setMoodOptions);
+    apiGet<string[]>("/api/lifelog/options").then(setMoodOptions);
   }, []);
 
   async function handleMoodChange(value: string | null) {
     if (!latest || saving || !value) return;
     setSaving(true);
-    await fetch(`/api/lifelog/${latest.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ moodSelect: value }),
-    });
+    await apiPatch(`/api/lifelog/${latest.id}`, { moodSelect: value });
     await new Promise((r) => setTimeout(r, 1500));
     await onRefresh?.();
     setSaving(false);

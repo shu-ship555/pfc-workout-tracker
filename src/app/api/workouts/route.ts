@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { listWorkouts, createWorkout } from "@/lib/notion";
-import { jstDaysAgo } from "@/lib/date-utils";
+import { jstDaysAgo, shiftDateStr } from "@/lib/date-utils";
 import { DEMO_WORKOUTS, generateDemoId } from "@/lib/demo-data";
 import { IS_DEMO } from "@/lib/api-utils";
 
@@ -16,11 +16,10 @@ export async function GET() {
     const workouts =
       shift === 0
         ? DEMO_WORKOUTS
-        : DEMO_WORKOUTS.map((w) => {
-            const d = new Date(w.created);
-            d.setUTCDate(d.getUTCDate() + shift);
-            return { ...w, created: d.toISOString() };
-          });
+        : DEMO_WORKOUTS.map((w) => ({
+            ...w,
+            created: shiftDateStr(w.created, shift) + w.created.slice(10),
+          }));
     return NextResponse.json(workouts);
   }
   const workouts = await listWorkouts();

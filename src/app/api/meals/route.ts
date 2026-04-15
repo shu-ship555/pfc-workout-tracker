@@ -1,14 +1,8 @@
 import { NextResponse } from "next/server";
 import { listMeals, createMeal } from "@/lib/notion";
 import { IS_DEMO, apiError, parseMealBody } from "@/lib/api-utils";
-import { jstToday } from "@/lib/date-utils";
+import { jstToday, shiftDateStr } from "@/lib/date-utils";
 import { DEMO_MEALS, generateDemoId } from "@/lib/demo-data";
-
-function shiftDateStr(dateStr: string, days: number): string {
-  const d = new Date(dateStr + "T00:00:00Z");
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().split("T")[0];
-}
 
 export async function GET() {
   if (IS_DEMO) {

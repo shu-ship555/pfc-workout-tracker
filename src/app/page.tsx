@@ -21,13 +21,15 @@ import type { WorkoutEntry, WorkoutFormData, MealEntry, LifeLogEntry } from "@/l
 import { Plus, Dumbbell, Utensils, FlaskConical, Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
+import { apiGet } from "@/lib/api-client";
+import { useCrudList } from "@/hooks/use-crud-list";
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 export default function Home() {
   const { resolvedTheme, setTheme } = useTheme();
-  const [workouts, setWorkouts] = useState<WorkoutEntry[]>([]);
-  const [meals, setMeals] = useState<MealEntry[]>([]);
+  const { items: workouts, setItems: setWorkouts, add: addWorkout, update: updateWorkout, remove: removeWorkout } = useCrudList<WorkoutEntry>();
+  const { items: meals, setItems: setMeals, add: addMeal, update: updateMeal, remove: removeMeal } = useCrudList<MealEntry>();
   const [lifeLogs, setLifeLogs] = useState<LifeLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -38,15 +40,15 @@ export default function Home() {
   const [addedCount, setAddedCount] = useState(0);
 
   async function fetchLifeLogs() {
-    const data: LifeLogEntry[] = await fetch("/api/lifelog").then((r) => r.ok ? r.json() : []);
+    const data = await apiGet<LifeLogEntry[]>("/api/lifelog");
     setLifeLogs(data);
   }
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/workouts").then((r) => r.json()) as Promise<WorkoutEntry[]>,
-      fetch("/api/meals").then((r) => r.json()) as Promise<MealEntry[]>,
-      fetch("/api/daily-summary").then((r): Promise<LifeLogEntry[]> => r.ok ? r.json() : Promise.resolve([])),
+      apiGet<WorkoutEntry[]>("/api/workouts"),
+      apiGet<MealEntry[]>("/api/meals"),
+      apiGet<LifeLogEntry[]>("/api/daily-summary").catch(() => [] as LifeLogEntry[]),
     ]).then(([workoutData, mealData, lifeLogData]) => {
       setWorkouts(workoutData);
       setMeals(mealData);
@@ -60,10 +62,10 @@ export default function Home() {
         });
       }
     }).finally(() => setLoading(false));
-  }, []);
+  }, [setWorkouts, setMeals]);
 
   function handleAdd(entry: WorkoutEntry) {
-    setWorkouts((prev) => [entry, ...prev]);
+    addWorkout(entry);
     setOpen(false);
   }
 
@@ -83,25 +85,9 @@ export default function Home() {
     }
   }
 
-  function handleUpdate(entry: WorkoutEntry) {
-    setWorkouts((prev) => prev.map((w) => (w.id === entry.id ? entry : w)));
-  }
-
-  function handleDelete(id: string) {
-    setWorkouts((prev) => prev.filter((w) => w.id !== id));
-  }
-
   function handleMealAdd(meal: MealEntry) {
-    setMeals((prev) => [meal, ...prev]);
+    addMeal(meal);
     setMealOpen(false);
-  }
-
-  function handleMealDelete(id: string) {
-    setMeals((prev) => prev.filter((m) => m.id !== id));
-  }
-
-  function handleMealUpdate(meal: MealEntry) {
-    setMeals((prev) => prev.map((m) => (m.id === meal.id ? meal : m)));
   }
 
   return (
@@ -213,7 +199,7 @@ export default function Home() {
       </div>
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-5 pb-24 sm:pb-6 space-y-6">
-        <PFCSummary meals={meals} lifeLogs={lifeLogs} loading={loading} onMealDelete={handleMealDelete} onMealUpdate={handleMealUpdate} />
+        <PFCSummary meals={meals} lifeLogs={lifeLogs} loading={loading} onMealDelete={removeMeal} onMealUpdate={updateMeal} />
 
         <Separator className="mt-10 mb-12" />
 
@@ -246,8 +232,8 @@ export default function Home() {
           workouts={workouts}
           loading={loading}
           paginate
-          onUpdate={handleUpdate}
-          onDelete={handleDelete}
+          onUpdate={updateWorkout}
+          onDelete={removeWorkout}
           onDisplayChange={setListDisplay}
         />
       </main>

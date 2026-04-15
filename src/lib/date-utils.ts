@@ -45,3 +45,10 @@ export function formatLogDate(date: string): string {
   const parts = date.replace(/-/g, "/").split("/");
   return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
 }
+
+/** 日付文字列を指定日数ぶんシフトして YYYY-MM-DD で返す（デモデータ用） */
+export function shiftDateStr(dateStr: string, days: number): string {
+  const d = new Date(dateStr.slice(0, 10) + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().split("T")[0];
+}
