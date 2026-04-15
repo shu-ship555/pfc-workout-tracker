@@ -13,14 +13,15 @@ export async function GET() {
       return d > max ? d : max;
     }, "0000-00-00");
     const shift = Math.round((Date.parse(target) - Date.parse(maxDate)) / 86400000);
-    const workouts =
+    const shifted =
       shift === 0
-        ? DEMO_WORKOUTS
+        ? [...DEMO_WORKOUTS]
         : DEMO_WORKOUTS.map((w) => ({
             ...w,
             created: shiftDateStr(w.created, shift) + w.created.slice(10),
           }));
-    return NextResponse.json(workouts);
+    shifted.sort((a, b) => (a.created < b.created ? 1 : a.created > b.created ? -1 : 0));
+    return NextResponse.json(shifted);
   }
   const workouts = await listWorkouts();
   return NextResponse.json(workouts);
