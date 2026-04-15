@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, Noto_Sans_JP, Geist_Mono } from "next/font/google";
+import { AppToaster } from "@/components/app-toaster";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -37,6 +38,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-background text-foreground flex flex-col">
         {children}
+        <AppToaster />
       </body>
     </html>
   );

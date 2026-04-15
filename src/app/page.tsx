@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { appToast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -48,6 +49,14 @@ export default function Home() {
       setWorkouts(workoutData);
       setMeals(mealData);
       setLifeLogs(lifeLogData);
+
+      const today = lifeLogData[0];
+      if (today && !today.moodSelect && new Date().getHours() >= 20) {
+        appToast.info("気分が未入力です", {
+          description: "ライフログから今日の気分を記録しましょう",
+          duration: 4000,
+        });
+      }
     }).finally(() => setLoading(false));
   }, []);
 
