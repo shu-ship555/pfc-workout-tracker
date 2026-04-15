@@ -6,7 +6,7 @@ export type PFCValues = {
 };
 
 /** PFCValues のキー順序定義。表示・入力グリッド等で共有する。 */
-export const PFC_KEYS = ["kcal", "protein", "fat", "carb"] as const;
+export const PFC_KEYS = ["protein", "fat", "carb", "kcal"] as const;
 
 export type MealLike = { name: string } & PFCValues;
 
