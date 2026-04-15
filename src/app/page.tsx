@@ -43,7 +43,7 @@ export default function Home() {
     Promise.all([
       fetch("/api/workouts").then((r) => r.json()) as Promise<WorkoutEntry[]>,
       fetch("/api/meals").then((r) => r.json()) as Promise<MealEntry[]>,
-      fetch("/api/lifelog").then((r): Promise<LifeLogEntry[]> => r.ok ? r.json() : Promise.resolve([])),
+      fetch("/api/daily-summary").then((r): Promise<LifeLogEntry[]> => r.ok ? r.json() : Promise.resolve([])),
     ]).then(([workoutData, mealData, lifeLogData]) => {
       setWorkouts(workoutData);
       setMeals(mealData);

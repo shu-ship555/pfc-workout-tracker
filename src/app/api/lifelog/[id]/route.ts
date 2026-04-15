@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { updateLifeLogMood } from "@/lib/notion";
 import { DEMO_LIFE_LOGS } from "@/lib/demo-data";
-
-const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+import { IS_DEMO } from "@/lib/api-utils";
 
 export async function PATCH(
   req: Request,

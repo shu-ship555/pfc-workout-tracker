@@ -38,6 +38,7 @@ export type LifeLogEntry = {
   steps: number | null;
   city: string;
   consumedKcal: number | null;
+  weight: number | null;
   moodSelect: string; // 気分セレクト値
 };
 

@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { listMeals, createMeal } from "@/lib/notion";
-import { apiError } from "@/lib/api-utils";
+import { IS_DEMO, apiError, parseMealBody } from "@/lib/api-utils";
 import { jstToday } from "@/lib/date-utils";
 import { DEMO_MEALS, generateDemoId } from "@/lib/demo-data";
-
-const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 function shiftDateStr(dateStr: string, days: number): string {
   const d = new Date(dateStr + "T00:00:00Z");
@@ -27,25 +25,11 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const fields = parseMealBody(body);
     if (IS_DEMO) {
-      return NextResponse.json({
-        id: generateDemoId(),
-        date: jstToday(),
-        name: String(body.name),
-        kcal: Number(body.kcal) || 0,
-        protein: Number(body.protein) || 0,
-        fat: Number(body.fat) || 0,
-        carb: Number(body.carb) || 0,
-      });
+      return NextResponse.json({ id: generateDemoId(), date: jstToday(), ...fields });
     }
-    const meal = await createMeal({
-      name: String(body.name),
-      date: jstToday(),
-      kcal: Number(body.kcal) || 0,
-      protein: Number(body.protein) || 0,
-      fat: Number(body.fat) || 0,
-      carb: Number(body.carb) || 0,
-    });
+    const meal = await createMeal({ date: jstToday(), ...fields });
     return NextResponse.json(meal);
   } catch (e) {
     return apiError(e);

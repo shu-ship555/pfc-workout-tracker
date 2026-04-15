@@ -179,23 +179,23 @@ export function MealForm({ onSuccess, onCancel }: Props) {
     setStep("preview");
   }
 
-  // --- text analyze ---
+  // --- analyze (text / image 共通) ---
 
-  async function handleTextAnalyze() {
-    if (!textInput.trim()) return;
+  async function handleAnalyze(body: Record<string, unknown>, fromImage: boolean) {
     setStep("analyzing");
     setError(null);
     try {
       const res = await fetch("/api/meals/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: textInput }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "解析に失敗しました");
       const data: MealAnalysis = await res.json();
       setPreviewData(toMealData(data));
-      setIsImageSource(false);
+      setIsImageSource(fromImage);
       setSupplementDone(false);
+      if (fromImage) setSupplement("");
       setStep("preview");
     } catch (e) {
       setError(e instanceof Error ? e.message : "解析に失敗しました");
@@ -203,7 +203,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
     }
   }
 
-  // --- image upload & analyze ---
+  // --- image upload ---
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -217,29 +217,6 @@ export function MealForm({ onSuccess, onCancel }: Props) {
       setImageBase64(base64);
     };
     reader.readAsDataURL(file);
-  }
-
-  async function handleImageAnalyze() {
-    if (!imageBase64) return;
-    setStep("analyzing");
-    setError(null);
-    try {
-      const res = await fetch("/api/meals/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: imageBase64, mimeType: imageMime }),
-      });
-      if (!res.ok) throw new Error((await res.json()).error ?? "解析に失敗しました");
-      const data: MealAnalysis = await res.json();
-      setPreviewData(toMealData(data));
-      setIsImageSource(true);
-      setSupplementDone(false);
-      setSupplement("");
-      setStep("preview");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "解析に失敗しました");
-      setStep("error");
-    }
   }
 
   // --- supplement refinement ---
@@ -553,7 +530,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleTextAnalyze();
+                if (e.key === "Enter") handleAnalyze({ text: textInput }, false);
               }}
             />
           </div>
@@ -562,7 +539,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
             type="button"
             className="w-full hover:bg-primary/80"
             disabled={!textInput.trim()}
-            onClick={handleTextAnalyze}
+            onClick={() => handleAnalyze({ text: textInput }, false)}
           >
             Geminiで解析
           </Button>
@@ -639,7 +616,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
             type="button"
             className="w-full hover:bg-primary/80"
             disabled={!imageBase64}
-            onClick={handleImageAnalyze}
+            onClick={() => handleAnalyze({ image: imageBase64, mimeType: imageMime }, true)}
           >
             Geminiで解析
           </Button>

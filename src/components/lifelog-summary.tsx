@@ -23,9 +23,10 @@ import {
 } from "recharts";
 import type { LifeLogEntry } from "@/lib/types";
 import { ChartTooltip } from "@/components/chart-tooltip";
+import { ScrollableChart } from "@/components/scrollable-chart";
 import { getMoodColorClass, getMoodDotClass, CHART_COLORS } from "@/lib/color-constants";
 import { formatLogDate, jstDaysAgo, normalizeDate } from "@/lib/date-utils";
-import { Moon, Sun, Cloud, Thermometer, Droplets, Footprints, MapPin, Smile, Flame, RefreshCw } from "lucide-react";
+import { Moon, Sun, Cloud, Thermometer, Droplets, Footprints, MapPin, Smile, Flame, RefreshCw, User } from "lucide-react";
 
 type Props = { logs: LifeLogEntry[]; loading?: boolean; onRefresh?: () => Promise<void> };
 
@@ -83,6 +84,9 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
   const [saving, setSaving] = useState(false);
 
   const moodSelect = latest?.moodSelect ?? "";
+
+  // 今日の体重が未記録の場合は直近の記録値を使用
+  const latestWeight = logs.find((l) => l.weight != null)?.weight ?? null;
 
   useEffect(() => {
     fetch("/api/lifelog/options").then((r) => r.json()).then(setMoodOptions);
@@ -186,9 +190,7 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
                 </span>
               </div>
             </div>
-            {/* 常にスクロール可能、データ量に応じた最小幅 */}
-            <div className="overflow-x-auto -mx-1 px-1">
-              <div style={{ minWidth: Math.max(chartData.length * 28, 320) }}>
+            <ScrollableChart dataLength={chartData.length}>
                 <ResponsiveContainer width="100%" height={160}>
                   <ComposedChart data={chartData} margin={{ top: 2, right: 0, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -284,8 +286,7 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
-              </div>
-            </div>
+            </ScrollableChart>
           </>
         )}
 
@@ -349,7 +350,7 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
           </InfoCard>
         </div>
 
-        {(latest.city || latest.consumedKcal != null) && (
+        {(latest.city || latest.consumedKcal != null || latestWeight != null) && (
           <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
             {latest.city && (
               <div className="flex items-center gap-1">
@@ -362,6 +363,13 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
                 <Flame className="h-3.5 w-3.5" />
                 <span className="font-mono">{latest.consumedKcal.toLocaleString()}</span>
                 <span>kcal</span>
+              </div>
+            )}
+            {latestWeight != null && (
+              <div className="flex items-center gap-1">
+                <User className="h-3.5 w-3.5" />
+                <span className="font-mono">{latestWeight}</span>
+                <span>kg</span>
               </div>
             )}
           </div>

@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteLatestMeal } from "@/lib/notion";
-import { apiError } from "@/lib/api-utils";
-
-const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+import { IS_DEMO, apiError } from "@/lib/api-utils";
 
 export async function DELETE() {
   if (IS_DEMO) return NextResponse.json({ id: "demo-latest", name: "デモデータ" });

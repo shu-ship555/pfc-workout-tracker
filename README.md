@@ -43,11 +43,13 @@ src/
 │   │   ├── workouts/              # GET(一覧) / POST(作成)
 │   │   │   └── [id]/              # PUT(更新) / DELETE(アーカイブ)
 │   │   ├── meals/                 # GET(一覧) / POST(作成)
-│   │   │   ├── [id]/              # PUT(更新) / DELETE(削除)
+│   │   │   ├── [id]/              # PATCH(更新) / DELETE(削除)
 │   │   │   ├── analyze/           # POST(Gemini分析)
-│   │   │   └── latest/            # GET(最新記録取得)
-│   │   └── lifelog/               # GET(一覧) / PATCH(気分更新)
-│   │       └── options/           # GET(気分セレクト選択肢)
+│   │   │   └── latest/            # DELETE(最新記録削除)
+│   │   ├── lifelog/               # GET(一覧)
+│   │   │   ├── [id]/              # PATCH(気分更新)
+│   │   │   └── options/           # GET(気分セレクト選択肢)
+│   │   └── daily-summary/         # GET(ライフログ・天気・Fitbit集約)
 │   ├── layout.tsx                 # ルートレイアウト（フォント設定）
 │   ├── page.tsx                   # メインダッシュボード
 │   ├── globals.css                # Tailwindテーマ変数
@@ -64,15 +66,19 @@ src/
 │   ├── pfc-input-grid.tsx         # PFC数値入力グリッド（4列・編集用）
 │   ├── date-range-input.tsx       # 日付範囲選択コンポーネント
 │   ├── lifelog-summary.tsx        # ライフログComposedChart
+│   ├── scrollable-chart.tsx       # 横スクロール可能チャートコンテナ（共通）
 │   └── chart-tooltip.tsx          # カスタムRechartsツールチップ
 └── lib/
     ├── types.ts                   # WorkoutEntry / MealEntry / LifeLogEntry / PFCValues / MealLike
     ├── notion.ts                  # NotionAPIクライアント・クエリ関数
     ├── exercises.ts               # PARTS・EXERCISESマッピング
     ├── gemini.ts                  # Google Gemini APIクライアント
+    ├── weather.ts                 # OpenWeather APIクライアント
+    ├── fitbit.ts                  # Fitbit APIクライアント
     ├── date-utils.ts              # JST日付ユーティリティ
     ├── color-constants.ts         # セマンティックカラー定数（一元管理）
-    ├── api-utils.ts               # APIエラーハンドリング
+    ├── api-utils.ts               # IS_DEMO定数・APIエラー変換・Mealボディパース
+    ├── demo-data.ts               # デモ用フィクスチャデータ・日付シフトヘルパー
     └── utils.ts                   # cn()ユーティリティ
 ```
 

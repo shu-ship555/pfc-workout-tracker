@@ -237,6 +237,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 7100,
     city: "東京",
     consumedKcal: 2200,
+    weight: 70.2,
     moodSelect: "3",
   },
   {
@@ -252,6 +253,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 9800,
     city: "東京",
     consumedKcal: 2450,
+    weight: null,
     moodSelect: "5",
   },
   {
@@ -267,6 +269,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 7900,
     city: "東京",
     consumedKcal: 2310,
+    weight: null,
     moodSelect: "4",
   },
   {
@@ -282,6 +285,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 3600,
     city: "東京",
     consumedKcal: 2030,
+    weight: null,
     moodSelect: "2",
   },
   {
@@ -297,6 +301,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 6200,
     city: "東京",
     consumedKcal: 2120,
+    weight: null,
     moodSelect: "3",
   },
   {
@@ -312,6 +317,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 10200,
     city: "東京",
     consumedKcal: 2470,
+    weight: null,
     moodSelect: "5",
   },
   {
@@ -327,6 +333,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 8800,
     city: "東京",
     consumedKcal: 2380,
+    weight: null,
     moodSelect: "4",
   },
   {
@@ -342,6 +349,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 2800,
     city: "東京",
     consumedKcal: 2060,
+    weight: null,
     moodSelect: "1",
   },
   {
@@ -357,6 +365,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 5200,
     city: "東京",
     consumedKcal: 2150,
+    weight: null,
     moodSelect: "3",
   },
   {
@@ -372,6 +381,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 7600,
     city: "東京",
     consumedKcal: 2290,
+    weight: null,
     moodSelect: "4",
   },
   {
@@ -387,6 +397,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 9500,
     city: "東京",
     consumedKcal: 2420,
+    weight: null,
     moodSelect: "5",
   },
   {
@@ -402,6 +413,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 4500,
     city: "東京",
     consumedKcal: 2080,
+    weight: null,
     moodSelect: "2",
   },
   {
@@ -417,6 +429,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 8200,
     city: "東京",
     consumedKcal: 2350,
+    weight: null,
     moodSelect: "4",
   },
   {
@@ -432,6 +445,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 6800,
     city: "東京",
     consumedKcal: 2180,
+    weight: null,
     moodSelect: "3",
   },
 ];
@@ -445,6 +459,24 @@ export const DEMO_MEAL_ANALYSIS: MealAnalysis = {
   f: 10,
   c: 28,
 };
+
+/**
+ * DEMO_LIFE_LOGS の最新日付を targetDate（デフォルト: 昨日）に合わせて日付シフトして返す。
+ * /api/lifelog と /api/daily-summary で共有。
+ */
+export function getShiftedDemoLifeLogs(targetDate: string): LifeLogEntry[] {
+  const maxDate = DEMO_LIFE_LOGS.reduce((max, l) => {
+    const n = l.date.replace(/\//g, "-");
+    return n > max ? n : max;
+  }, "0000-00-00");
+  const shift = Math.round((Date.parse(targetDate) - Date.parse(maxDate)) / 86400000);
+  if (shift === 0) return DEMO_LIFE_LOGS;
+  return DEMO_LIFE_LOGS.map((l) => {
+    const d = new Date(l.date.replace(/\//g, "-") + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() + shift);
+    return { ...l, date: d.toISOString().split("T")[0].replace(/-/g, "/") };
+  });
+}
 
 export function generateDemoId(): string {
   return `demo-new-${Date.now()}`;

@@ -17,6 +17,7 @@ import type { WorkoutEntry } from "@/lib/types";
 import { EXERCISES, type Part } from "@/lib/exercises";
 import { ChartTooltip } from "@/components/chart-tooltip";
 import { PartSelect, ExerciseSelect } from "@/components/workout-selects";
+import { ScrollableChart } from "@/components/scrollable-chart";
 import { CHART_COLORS } from "@/lib/color-constants";
 import { jstToday, jstMonthsAgo, formatDateShort } from "@/lib/date-utils";
 
@@ -110,8 +111,7 @@ export function WorkoutChart({ workouts }: Props) {
             データが不足しています（2件以上必要）
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-1 px-1">
-            <div style={{ minWidth: Math.max(chartData.length * 28, 320) }}>
+          <ScrollableChart dataLength={chartData.length}>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={chartData} margin={{ top: 2, right: 16, left: 0, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -159,8 +159,7 @@ export function WorkoutChart({ workouts }: Props) {
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
-          </div>
+          </ScrollableChart>
         )}
         <p className="text-xs text-muted-foreground mt-1 text-right">
           ウォームアップを除く最大重量

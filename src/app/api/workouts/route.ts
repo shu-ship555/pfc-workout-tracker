@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { listWorkouts, createWorkout } from "@/lib/notion";
 import { jstDaysAgo } from "@/lib/date-utils";
 import { DEMO_WORKOUTS, generateDemoId } from "@/lib/demo-data";
-
-const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+import { IS_DEMO } from "@/lib/api-utils";
 
 export async function GET() {
   if (IS_DEMO) {

@@ -166,6 +166,7 @@ function pageToLifeLog(page: any): LifeLogEntry {
     steps: props["歩数"]?.number ?? null,
     city: props["街"]?.rich_text?.[0]?.plain_text ?? "",
     consumedKcal: props["消費カロリー"]?.number ?? null,
+    weight: props["体重"]?.number ?? null,
     moodSelect: props["気分"]?.select?.name ?? "",
   };
 }
@@ -192,4 +193,59 @@ export async function updateLifeLogMood(id: string, moodSelect: string): Promise
       気分: { select: moodSelect ? { name: moodSelect } : null } as any,
     },
   });
+}
+
+type LifeLogUpsertData = {
+  city: string;
+  weather: string;
+  tempMax: number | null;
+  tempMin: number | null;
+  humidity: number | null;
+  steps: number | null;
+  consumedKcal: number | null;
+  sleepHours: number | null;
+  sleepTime: string;
+  wakeTime: string;
+  weight: number | null;
+};
+
+/** 今日の日付で Notion lifelog を upsert する（あれば更新、なければ作成） */
+export async function upsertTodayLifeLog(data: LifeLogUpsertData): Promise<void> {
+  const jstNow = new Date(Date.now() + 9 * 3600_000);
+  const todayDisplay = jstNow.toISOString().slice(0, 10).replace(/-/g, "/"); // "YYYY/MM/DD"
+
+  const existing = await notion.databases.query({
+    database_id: LIFELOG_DB,
+    filter: { property: "名前", title: { equals: todayDisplay } },
+  });
+
+  const sharedProps: Record<string, unknown> = {
+    天気: { rich_text: [{ text: { content: data.weather } }] },
+    最高気温: { number: data.tempMax },
+    最低気温: { number: data.tempMin },
+    湿度: { number: data.humidity },
+    街: { rich_text: [{ text: { content: data.city } }] },
+    歩数: { number: data.steps },
+    消費カロリー: { number: data.consumedKcal },
+    睡眠時間: { number: data.sleepHours },
+    入眠: { rich_text: [{ text: { content: data.sleepTime } }] },
+    起床: { rich_text: [{ text: { content: data.wakeTime } }] },
+    体重: { number: data.weight },
+  };
+
+  if (existing.results.length > 0) {
+    await notion.pages.update({
+      page_id: existing.results[0].id,
+      properties: sharedProps as any,
+    });
+  } else {
+    await notion.pages.create({
+      parent: { database_id: LIFELOG_DB },
+      properties: {
+        名前: { title: [{ text: { content: todayDisplay } }] },
+        日付: { date: { start: new Date().toISOString() } },
+        ...sharedProps,
+      } as any,
+    });
+  }
 }

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateWorkout, deleteWorkout } from "@/lib/notion";
-
-const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+import { IS_DEMO } from "@/lib/api-utils";
 
 export async function PUT(
   request: Request,
