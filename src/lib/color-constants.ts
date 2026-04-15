@@ -11,18 +11,18 @@
 
 export const PFC_COLORS = {
   protein: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  fat:     "bg-yellow-500/10 text-yellow-500",
-  carb:    "bg-green-500/10 text-green-600 dark:text-green-400",
-  kcal:    "bg-orange-500/10 text-orange-500",
+  fat:     "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
+  carb:    "bg-green-500/10 text-green-700 dark:text-green-400",
+  kcal:    "bg-orange-500/10 text-orange-700 dark:text-orange-400",
 } as const;
 
 // ─── 気分スコア ──────────────────────────────────────────────────────────────
 // 0〜10 スケール: 極端(≤1/≥9) → 赤、中間(≤3/≥7) → 黄、良好 → 緑
 
 export const MOOD_COLORS = {
-  bad:     { text: "text-red-500",                       dot: "bg-red-500"    },
-  warning: { text: "text-yellow-500",                    dot: "bg-yellow-500" },
-  good:    { text: "text-green-600 dark:text-green-400", dot: "bg-green-600"  },
+  bad:     { text: "text-red-700 dark:text-red-400",       dot: "bg-red-500"    },
+  warning: { text: "text-yellow-700 dark:text-yellow-400", dot: "bg-yellow-500" },
+  good:    { text: "text-green-700 dark:text-green-400",   dot: "bg-green-600"  },
 } as const;
 
 export function getMoodColorClass(mood: number): string {
@@ -41,16 +41,16 @@ export function getMoodDotClass(mood: number): string {
 // outline バッジ上のフラグ色。セマンティックパレットの黄・赤を使用
 
 export const FLAG_COLORS = {
-  rebound:  "text-yellow-500",
-  unstable: "text-red-500",
+  rebound:  "text-yellow-700 dark:text-yellow-400",
+  unstable: "text-red-700 dark:text-red-400",
 } as const;
 
 // ─── ステータス ──────────────────────────────────────────────────────────────
 // 操作の成否を示すフィードバック色。DESIGN.md セマンティックカラー（緑/赤）を使用
 
 export const STATUS_COLORS = {
-  success: "bg-green-500/10 text-green-600 dark:text-green-400",
-  alert:   "text-red-500",
+  success: "bg-green-500/10 text-green-700 dark:text-green-400",
+  alert:   "text-red-700 dark:text-red-400",
 } as const;
 
 // ─── チャートストローク（recharts props 向け CSS 変数文字列）────────────────
