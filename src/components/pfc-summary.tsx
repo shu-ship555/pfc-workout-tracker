@@ -174,7 +174,7 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
                   <p className="text-xl font-bold font-mono leading-tight mt-0.5">
                     {item.value.toFixed(0)}
                     <span className="text-xs font-normal mx-0.5">/</span>
-                    <span className="text-base">{consumed.toFixed(0)}</span>
+                    <span className="text-xs sm:text-sm">{consumed.toFixed(0)}</span>
                     <span className="text-xs font-normal ml-0.5">kcal</span>
                   </p>
                   {item.value > consumed && (
