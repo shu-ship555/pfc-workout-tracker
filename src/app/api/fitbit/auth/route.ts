@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 
 /** Fitbit OAuth 認証を開始する（初回セットアップ用） */
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  if (searchParams.get("secret") !== process.env.FITBIT_AUTH_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const clientId = process.env.FITBIT_CLIENT_ID;
   if (!clientId) {
     return NextResponse.json({ error: "FITBIT_CLIENT_ID not configured" }, { status: 500 });

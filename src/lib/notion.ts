@@ -219,18 +219,19 @@ export async function upsertTodayLifeLog(data: LifeLogUpsertData): Promise<void>
     filter: { property: "名前", title: { equals: todayDisplay } },
   });
 
+  // null や空文字の場合は Notion の既存データを上書きしない
   const sharedProps: Record<string, unknown> = {
-    天気: { rich_text: [{ text: { content: data.weather } }] },
-    最高気温: { number: data.tempMax },
-    最低気温: { number: data.tempMin },
-    湿度: { number: data.humidity },
-    街: { rich_text: [{ text: { content: data.city } }] },
-    歩数: { number: data.steps },
-    消費カロリー: { number: data.consumedKcal },
-    睡眠時間: { number: data.sleepHours },
-    入眠: { rich_text: [{ text: { content: data.sleepTime } }] },
-    起床: { rich_text: [{ text: { content: data.wakeTime } }] },
-    体重: { number: data.weight },
+    ...(data.weather        && { 天気: { rich_text: [{ text: { content: data.weather } }] } }),
+    ...(data.tempMax  != null && { 最高気温: { number: data.tempMax } }),
+    ...(data.tempMin  != null && { 最低気温: { number: data.tempMin } }),
+    ...(data.humidity != null && { 湿度: { number: data.humidity } }),
+    ...(data.city           && { 街: { rich_text: [{ text: { content: data.city } }] } }),
+    ...(data.steps    != null && { 歩数: { number: data.steps } }),
+    ...(data.consumedKcal != null && { 消費カロリー: { number: data.consumedKcal } }),
+    ...(data.sleepHours != null && { 睡眠時間: { number: data.sleepHours } }),
+    ...(data.sleepTime      && { 入眠: { rich_text: [{ text: { content: data.sleepTime } }] } }),
+    ...(data.wakeTime       && { 起床: { rich_text: [{ text: { content: data.wakeTime } }] } }),
+    ...(data.weight   != null && { 体重: { number: data.weight } }),
   };
 
   if (existing.results.length > 0) {

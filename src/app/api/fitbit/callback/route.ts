@@ -46,12 +46,17 @@ export async function GET(req: Request) {
     updateVercelEnvVar("FITBIT_REFRESH_TOKEN", data.refresh_token),
   ]);
 
+  const isDev = process.env.NODE_ENV === "development";
   return NextResponse.json({
     success: true,
-    message: "Fitbit認証が完了しました。ローカル開発の場合は下記を .env.local にコピーしてください。",
-    env: {
-      FITBIT_ACCESS_TOKEN: data.access_token,
-      FITBIT_REFRESH_TOKEN: data.refresh_token,
-    },
+    message: isDev
+      ? "Fitbit認証が完了しました。下記を .env.local にコピーしてください。"
+      : "Fitbit認証が完了しました。",
+    ...(isDev && {
+      env: {
+        FITBIT_ACCESS_TOKEN: data.access_token,
+        FITBIT_REFRESH_TOKEN: data.refresh_token,
+      },
+    }),
   });
 }
