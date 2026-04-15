@@ -222,8 +222,24 @@ export const DEMO_MEALS: MealEntry[] = [
   { id: "demo-m-026", date: "2026-04-13", name: "プロテインシェイク", kcal: 120, protein: 25, fat: 2, carb: 5 },
 ];
 
-// 昨日（2026-04-12）から2週間前（2026-03-30）まで14日分
+// 昨日（2026-04-13）から2週間前（2026-03-30）まで14日分
 export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
+  {
+    id: "demo-l-015",
+    date: "2026/04/13",
+    mood: 5,
+    sleepTime: "00:15",
+    wakeTime: "07:45",
+    weather: "晴れ時々曇り",
+    tempMax: 20,
+    tempMin: 8,
+    humidity: 58,
+    steps: 8000,
+    city: "東京",
+    consumedKcal: 2250,
+    weight: 70.2,
+    moodSelect: "5",
+  },
   {
     id: "demo-l-014",
     date: "2026/04/12",
@@ -237,7 +253,7 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     steps: 7100,
     city: "東京",
     consumedKcal: 2200,
-    weight: 70.2,
+    weight: null,
     moodSelect: "3",
   },
   {
@@ -431,22 +447,6 @@ export const DEMO_LIFE_LOGS: LifeLogEntry[] = [
     consumedKcal: 2350,
     weight: null,
     moodSelect: "4",
-  },
-  {
-    id: "demo-l-001",
-    date: "2026/03/30",
-    mood: 3,
-    sleepTime: "00:00",
-    wakeTime: "07:30",
-    weather: "晴れ",
-    tempMax: 14,
-    tempMin: 6,
-    humidity: 45,
-    steps: 6800,
-    city: "東京",
-    consumedKcal: 2180,
-    weight: null,
-    moodSelect: "3",
   },
 ];
 
