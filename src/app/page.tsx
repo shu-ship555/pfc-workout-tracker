@@ -18,12 +18,14 @@ import { PFCSummary } from "@/components/pfc-summary";
 import { LifeLogSummary } from "@/components/lifelog-summary";
 import { MealForm } from "@/components/meal-form";
 import type { WorkoutEntry, WorkoutFormData, MealEntry, LifeLogEntry } from "@/lib/types";
-import { Plus, Dumbbell, Utensils, FlaskConical } from "lucide-react";
+import { Plus, Dumbbell, Utensils, FlaskConical, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 export default function Home() {
+  const { resolvedTheme, setTheme } = useTheme();
   const [workouts, setWorkouts] = useState<WorkoutEntry[]>([]);
   const [meals, setMeals] = useState<MealEntry[]>([]);
   const [lifeLogs, setLifeLogs] = useState<LifeLogEntry[]>([]);
@@ -118,6 +120,16 @@ export default function Home() {
             <Dumbbell className="h-6 w-6 text-primary" />
             <h1 className="text-lg font-bold tracking-tight">PFC Workout Tracker</h1>
           </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              aria-label="ダークモード切り替え"
+            >
+              {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
           <div className="hidden sm:flex items-center gap-2">
             <Dialog open={mealOpen} onOpenChange={setMealOpen}>
               <DialogTrigger render={<Button size="sm" variant="outline" className="h-auto pt-1 pb-1.5" />}>
@@ -155,6 +167,7 @@ export default function Home() {
                 />
               </DialogContent>
             </Dialog>
+          </div>
           </div>
         </div>
       </header>
