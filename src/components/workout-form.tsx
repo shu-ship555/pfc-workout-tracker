@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import type { WorkoutEntry, WorkoutFormData } from "@/lib/types";
 import { PartSelect, ExerciseSelect } from "@/components/workout-selects";
 import { Check } from "lucide-react";
+import { apiPost, apiPut } from "@/lib/api-client";
+import { STATUS_COLORS } from "@/lib/color-constants";
 
 type Props = {
   initial?: WorkoutEntry;
@@ -63,18 +65,9 @@ export function WorkoutForm({ initial, initialData, addedCount, onSuccess, onCon
     setLoading(true);
     setError(null);
     try {
-      const url = initial ? `/api/workouts/${initial.id}` : "/api/workouts";
-      const method = initial ? "PUT" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error ?? `Failed to save (${res.status})`);
-      }
-      const entry: WorkoutEntry = await res.json();
+      const entry = initial
+        ? await apiPut<WorkoutEntry>(`/api/workouts/${initial.id}`, form)
+        : await apiPost<WorkoutEntry>("/api/workouts", form);
       onSuccess(entry);
       if (continuousMode) onContinue?.(form);
     } catch (e: unknown) {
@@ -200,7 +193,7 @@ export function WorkoutForm({ initial, initialData, addedCount, onSuccess, onCon
         {continuousMode && (addedCount ?? 0) > 0 && (
           <div className={`flex items-center gap-1.5 text-xs rounded-md px-3 py-2 transition-colors duration-500 ${
             justAdded
-              ? "bg-green-500/10 text-green-600 dark:text-green-400"
+              ? STATUS_COLORS.success
               : "bg-muted/60 text-muted-foreground"
           }`}>
             {justAdded && <Check className="h-3.5 w-3.5 shrink-0" />}

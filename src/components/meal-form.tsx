@@ -22,6 +22,7 @@ import type { MealEntry, MealLike } from "@/lib/types";
 import { PFCInputGrid } from "@/components/pfc-input-grid";
 import type { MealAnalysis } from "@/lib/gemini";
 import { PFCGrid } from "@/components/pfc-grid";
+import { apiPost } from "@/lib/api-client";
 
 // --- Preset types & storage ---
 
@@ -150,13 +151,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
     setDirectSaving(true);
     setDirectError(null);
     try {
-      const res = await fetch("/api/meals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(directInput),
-      });
-      if (!res.ok) throw new Error((await res.json()).error ?? "保存に失敗しました");
-      const meal: MealEntry = await res.json();
+      const meal = await apiPost<MealEntry>("/api/meals", directInput);
       onSuccess(meal);
     } catch (e) {
       setDirectError(e instanceof Error ? e.message : "保存に失敗しました");
@@ -185,13 +180,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
     setStep("analyzing");
     setError(null);
     try {
-      const res = await fetch("/api/meals/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error((await res.json()).error ?? "解析に失敗しました");
-      const data: MealAnalysis = await res.json();
+      const data = await apiPost<MealAnalysis>("/api/meals/analyze", body);
       setPreviewData(toMealData(data));
       setIsImageSource(fromImage);
       setSupplementDone(false);
@@ -226,13 +215,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
     setStep("analyzing");
     setError(null);
     try {
-      const res = await fetch("/api/meals/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prev: toAnalysis(previewData), supplement }),
-      });
-      if (!res.ok) throw new Error((await res.json()).error ?? "再計算に失敗しました");
-      const data: MealAnalysis = await res.json();
+      const data = await apiPost<MealAnalysis>("/api/meals/analyze", { prev: toAnalysis(previewData), supplement });
       setPreviewData(toMealData(data));
       setSupplement("");
       setSupplementDone(true);
@@ -250,13 +233,7 @@ export function MealForm({ onSuccess, onCancel }: Props) {
     setStep("saving");
     setError(null);
     try {
-      const res = await fetch("/api/meals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(previewData),
-      });
-      if (!res.ok) throw new Error((await res.json()).error ?? "保存に失敗しました");
-      const meal: MealEntry = await res.json();
+      const meal = await apiPost<MealEntry>("/api/meals", previewData);
       onSuccess(meal);
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存に失敗しました");

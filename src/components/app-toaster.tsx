@@ -28,6 +28,12 @@ export function AppToaster() {
       richColors
       closeButton
       style={isDesktop ? { "--width": "320px" } as React.CSSProperties : undefined}
+      toastOptions={{
+        classNames: {
+          title: "text-xs",
+          description: "text-xs",
+        },
+      }}
     />
   );
 }

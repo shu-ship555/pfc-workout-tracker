@@ -8,8 +8,9 @@ import { PFCInputGrid } from "@/components/pfc-input-grid";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Trash2, ChevronDown, ChevronUp, Pencil, Check, X } from "lucide-react";
 import type { MealEntry, LifeLogEntry, MealLike } from "@/lib/types";
-import { PFC_COLORS } from "@/lib/color-constants";
+import { PFC_COLORS, STATUS_COLORS } from "@/lib/color-constants";
 import { jstDaysAgo, normalizeDate } from "@/lib/date-utils";
+import { PFCSkeletonGrid } from "@/components/pfc-skeleton-grid";
 
 type Period = "today" | "yesterday" | "3days" | "7days";
 
@@ -123,11 +124,7 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
           <Skeleton className="h-8 w-64" />
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-16 rounded-lg" />
-            ))}
-          </div>
+          <PFCSkeletonGrid />
           <Skeleton className="h-7 w-full mt-3" />
         </CardContent>
       </Card>
@@ -173,19 +170,19 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {items.map((item) => (
             <div key={item.label} className={`rounded-lg px-3 pt-1.5 pb-2 ${item.color}`}>
-              <p className="text-xs font-medium opacity-70">{item.label}</p>
+              <p className="text-xs font-medium opacity-70 whitespace-nowrap">{item.label}</p>
               {item.unit === "kcal" && consumed != null ? (
                 <>
-                  <p className="text-lg font-bold font-mono leading-tight mt-0.5">
+                  <p className="text-xl font-bold font-mono leading-tight mt-0.5">
                     {item.value.toFixed(0)}
                     <span className="text-xs font-normal mx-0.5">/</span>
                     {consumed.toFixed(0)}
                     <span className="text-xs font-normal ml-0.5">kcal</span>
                   </p>
                   {item.value > consumed && (
-                    <div className="flex items-center gap-0.5 mt-0.5 text-red-500">
+                    <div className={`flex items-center gap-0.5 mt-0.5 ${STATUS_COLORS.alert}`}>
                       <AlertTriangle className="h-3 w-3" />
-                      <span className="text-xs">摂取超過</span>
+                      <span className="text-xs whitespace-nowrap">摂取超過</span>
                     </div>
                   )}
                 </>

@@ -36,6 +36,7 @@ export default function RootLayout({
     <html
       lang="ja"
       className={`${montserrat.variable} ${notoSansJP.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full bg-background text-foreground flex flex-col">
         <ThemeProvider>

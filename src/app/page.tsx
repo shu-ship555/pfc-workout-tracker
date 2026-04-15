@@ -53,7 +53,7 @@ export default function Home() {
       setLifeLogs(lifeLogData);
 
       const today = lifeLogData[0];
-      if (today && !today.moodSelect && new Date().getHours() >= 20) {
+      if (today && !today.moodSelect && new Date().getHours() >= 12) {
         appToast.info("気分が未入力です", {
           description: "ライフログから今日の気分を記録しましょう",
           duration: 4000,
@@ -234,9 +234,9 @@ export default function Home() {
           ) : (
             <p className="text-xs text-muted-foreground">
               {listDisplay ? (
-                <>{listDisplay.label} <span className="text-foreground/40 mx-0.5">|</span> {listDisplay.count} / {workouts.length} 件</>
+                <>{listDisplay.label} <span className="text-foreground/40 mx-0.5">|</span> <span className="font-mono">{listDisplay.count}</span> / <span className="font-mono">{workouts.length}</span> 件</>
               ) : (
-                <>{workouts.length} 件</>
+                <><span className="font-mono">{workouts.length}</span> 件</>
               )}
             </p>
           )}

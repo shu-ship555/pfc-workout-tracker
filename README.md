@@ -64,6 +64,7 @@ src/
 │   ├── pfc-summary.tsx            # PFC集計カード
 │   ├── pfc-grid.tsx               # PFCグリッド表示（コンパクト4列・読み取り専用）
 │   ├── pfc-input-grid.tsx         # PFC数値入力グリッド（4列・編集用）
+│   ├── pfc-skeleton-grid.tsx      # PFC4列スケルトンローディング（共通）
 │   ├── date-range-input.tsx       # 日付範囲選択コンポーネント
 │   ├── lifelog-summary.tsx        # ライフログComposedChart
 │   ├── scrollable-chart.tsx       # 横スクロール可能チャートコンテナ（共通）
@@ -76,7 +77,8 @@ src/
     ├── weather.ts                 # OpenWeather APIクライアント
     ├── fitbit.ts                  # Fitbit APIクライアント
     ├── date-utils.ts              # JST日付ユーティリティ
-    ├── color-constants.ts         # セマンティックカラー定数（一元管理）
+    ├── color-constants.ts         # セマンティックカラー定数（PFC/気分/ステータス等、一元管理）
+    ├── api-client.ts              # クライアントサイドfetchユーティリティ（apiPost/apiPut/apiPatch/apiDelete）
     ├── api-utils.ts               # IS_DEMO定数・APIエラー変換・Mealボディパース
     ├── demo-data.ts               # デモ用フィクスチャデータ・日付シフトヘルパー
     └── utils.ts                   # cn()ユーティリティ

@@ -45,6 +45,14 @@ export const FLAG_COLORS = {
   unstable: "text-red-500",
 } as const;
 
+// ─── ステータス ──────────────────────────────────────────────────────────────
+// 操作の成否を示すフィードバック色。DESIGN.md セマンティックカラー（緑/赤）を使用
+
+export const STATUS_COLORS = {
+  success: "bg-green-500/10 text-green-600 dark:text-green-400",
+  alert:   "text-red-500",
+} as const;
+
 // ─── チャートストローク（recharts props 向け CSS 変数文字列）────────────────
 
 export const CHART_COLORS = {

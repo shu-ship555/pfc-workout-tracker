@@ -24,6 +24,7 @@ import {
 import type { LifeLogEntry } from "@/lib/types";
 import { ChartTooltip } from "@/components/chart-tooltip";
 import { ScrollableChart } from "@/components/scrollable-chart";
+import { PFCSkeletonGrid } from "@/components/pfc-skeleton-grid";
 import { getMoodColorClass, getMoodDotClass, CHART_COLORS } from "@/lib/color-constants";
 import { formatLogDate, jstDaysAgo, normalizeDate } from "@/lib/date-utils";
 import { Moon, Sun, Cloud, Thermometer, Droplets, Footprints, MapPin, Smile, Flame, RefreshCw, User } from "lucide-react";
@@ -69,7 +70,7 @@ const LOG_TOOLTIP_DEFS: { key: string; label: string; color: string; format: (v:
 function InfoCard({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
     <div className="rounded-lg px-3 pt-1.5 pb-2 bg-muted/50">
-      <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+      <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground whitespace-nowrap">
         {icon}
         {label}
       </div>
@@ -129,11 +130,7 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
         <CardContent>
           <Skeleton className="h-40 w-full" />
           <Skeleton className="h-px w-full mt-4 mb-6" />
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-16 rounded-lg" />
-            ))}
-          </div>
+          <PFCSkeletonGrid />
         </CardContent>
       </Card>
     );
