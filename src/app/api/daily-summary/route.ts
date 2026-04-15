@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { fetchTodayWeather } from "@/lib/weather";
 import { fetchTodayFitbit } from "@/lib/fitbit";
 import { upsertTodayLifeLog, listLifeLogs } from "@/lib/notion";
-import { jstDaysAgo } from "@/lib/date-utils";
+import { jstToday } from "@/lib/date-utils";
 import { getShiftedDemoLifeLogs } from "@/lib/demo-data";
 import { IS_DEMO } from "@/lib/api-utils";
 
 export async function GET() {
   // デモモード: /api/lifelog と同じデータを返す
   if (IS_DEMO) {
-    return NextResponse.json(getShiftedDemoLifeLogs(jstDaysAgo(1)));
+    return NextResponse.json(getShiftedDemoLifeLogs(jstToday()));
   }
 
   const city = process.env.OPENWEATHER_CITY ?? "Tokyo";
