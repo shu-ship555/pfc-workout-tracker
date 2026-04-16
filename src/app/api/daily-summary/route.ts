@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchTodayWeather } from "@/lib/weather";
-import { fetchTodayFitbit } from "@/lib/fitbit";
+import { fetchTodayFitbit, FitbitAuthError } from "@/lib/fitbit";
 import { upsertTodayLifeLog, listLifeLogs } from "@/lib/notion";
 import { jstToday } from "@/lib/date-utils";
 import { getShiftedDemoLifeLogs } from "@/lib/demo-data";
@@ -54,5 +54,9 @@ export async function GET() {
   }
 
   const logs = await listLifeLogs();
-  return NextResponse.json(logs);
+  const headers: Record<string, string> = {};
+  if (fitbitResult.status === "rejected" && fitbitResult.reason instanceof FitbitAuthError) {
+    headers["x-fitbit-auth-error"] = "1";
+  }
+  return NextResponse.json(logs, { headers });
 }

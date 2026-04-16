@@ -48,7 +48,14 @@ export default function Home() {
     Promise.all([
       apiGet<WorkoutEntry[]>("/api/workouts"),
       apiGet<MealEntry[]>("/api/meals"),
-      apiGet<LifeLogEntry[]>("/api/daily-summary").catch(() => [] as LifeLogEntry[]),
+      fetch("/api/daily-summary").then(async (res) => {
+        if (res.headers.get("x-fitbit-auth-error") === "1") {
+          appToast.error("Fitbit の再認証が必要です", {
+            description: "リフレッシュトークンが無効になっています",
+          });
+        }
+        return res.ok ? (res.json() as Promise<LifeLogEntry[]>) : ([] as LifeLogEntry[]);
+      }).catch(() => [] as LifeLogEntry[]),
     ]).then(([workoutData, mealData, lifeLogData]) => {
       setWorkouts(workoutData);
       setMeals(mealData);

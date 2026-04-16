@@ -30,6 +30,14 @@ export async function updateVercelEnvVar(key: string, value: string): Promise<vo
   );
 }
 
+/** Fitbit の refresh_token が無効化された（invalid_grant）ことを示すエラー */
+export class FitbitAuthError extends Error {
+  constructor(message = "Fitbit refresh token invalid — re-auth required") {
+    super(message);
+    this.name = "FitbitAuthError";
+  }
+}
+
 // refresh_token は使い捨てのため、並行実行を1回に集約する
 let refreshPromise: Promise<string> | null = null;
 
@@ -61,7 +69,13 @@ async function doRefreshFitbitToken(): Promise<string> {
   });
 
   const data = await res.json();
-  if (!res.ok) throw new Error(`Fitbit token refresh failed: ${JSON.stringify(data.errors)}`);
+  if (!res.ok) {
+    const errorType = data?.errors?.[0]?.errorType;
+    if (errorType === "invalid_grant") {
+      throw new FitbitAuthError(`Fitbit refresh token invalid: ${JSON.stringify(data.errors)}`);
+    }
+    throw new Error(`Fitbit token refresh failed: ${JSON.stringify(data.errors)}`);
+  }
 
   // 現在のプロセスにも即反映
   process.env.FITBIT_ACCESS_TOKEN = data.access_token;
