@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -85,6 +85,14 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
   const [deleteTarget, setDeleteTarget] = useState<WorkoutEntry | null>(null);
   const [memoTarget, setMemoTarget] = useState<WorkoutEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 8);
+  }, []);
 
   const todayStr = jstToday();
 
@@ -130,6 +138,15 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
       });
     })()
     : baseWorkouts;
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    const ro = new ResizeObserver(checkScroll);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [displayed.length, checkScroll]);
 
   useEffect(() => {
     const label = isFiltered ? "フィルター中" : formatWindowLabel(page);
@@ -241,9 +258,10 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
           <p className="text-sm">この期間の記録はありません</p>
         </div>
       ) : (
-        <div className="rounded-md border">
+        <div className="relative">
+        <div ref={scrollRef} onScroll={checkScroll} className="rounded-md border max-h-[60vh] overflow-y-auto">
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 z-10 bg-card">
               <TableRow className="hover:bg-transparent">
                 <TableHead>日時</TableHead>
                 <TableHead>部位</TableHead>
@@ -325,6 +343,10 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
               ))}
             </TableBody>
           </Table>
+        </div>
+        {canScrollDown && (
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 rounded-b-md bg-gradient-to-t from-muted/80 to-transparent" />
+        )}
         </div>
       )}
 
