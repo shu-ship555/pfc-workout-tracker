@@ -9,23 +9,39 @@ export async function updateVercelEnvVar(key: string, value: string): Promise<vo
   const listRes = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env${qs}`, {
     headers: { Authorization: `Bearer ${apiToken}` },
   });
+  if (!listRes.ok) {
+    throw new Error(`Vercel env list failed: ${listRes.status} ${await listRes.text()}`);
+  }
   const listData = await listRes.json();
   const envs: { id: string; key: string }[] = listData.envs ?? [];
   const targets = envs.filter((e) => e.key === key);
 
   await Promise.all(
-    targets.map((env) =>
-      fetch(`https://api.vercel.com/v9/projects/${projectId}/env/${env.id}${qs}`, {
+    targets.map(async (env) => {
+      const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env/${env.id}${qs}`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({ value }),
-      })
-    )
+      });
+      if (!res.ok) {
+        throw new Error(`Vercel env update failed for ${key}: ${res.status} ${await res.text()}`);
+      }
+    })
   );
 }
 
-/** access_token を refresh_token で更新し、Vercel 環境変数も書き換える */
+// refresh_token は使い捨てのため、並行実行を1回に集約する
+let refreshPromise: Promise<string> | null = null;
+
 async function refreshFitbitToken(): Promise<string> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = doRefreshFitbitToken().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
+
+async function doRefreshFitbitToken(): Promise<string> {
   const { FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET, FITBIT_REFRESH_TOKEN } = process.env;
   if (!FITBIT_CLIENT_ID || !FITBIT_CLIENT_SECRET || !FITBIT_REFRESH_TOKEN) {
     throw new Error("Fitbit credentials not configured");
@@ -51,9 +67,11 @@ async function refreshFitbitToken(): Promise<string> {
   process.env.FITBIT_ACCESS_TOKEN = data.access_token;
   process.env.FITBIT_REFRESH_TOKEN = data.refresh_token;
 
-  // Vercel 環境変数を非同期で更新（失敗してもリクエストは続行）
-  updateVercelEnvVar("FITBIT_ACCESS_TOKEN", data.access_token).catch(console.error);
-  updateVercelEnvVar("FITBIT_REFRESH_TOKEN", data.refresh_token).catch(console.error);
+  // Vercel 環境変数の永続化を待つ（失敗すると次回 invocation で invalid_grant になるため）
+  await Promise.all([
+    updateVercelEnvVar("FITBIT_ACCESS_TOKEN", data.access_token),
+    updateVercelEnvVar("FITBIT_REFRESH_TOKEN", data.refresh_token),
+  ]);
 
   return data.access_token as string;
 }
