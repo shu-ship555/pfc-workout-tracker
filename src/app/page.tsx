@@ -8,8 +8,17 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { WorkoutForm } from "@/components/workout-form";
 import { WorkoutList } from "@/components/workout-list";
@@ -18,7 +27,7 @@ import { PFCSummary } from "@/components/pfc-summary";
 import { LifeLogSummary } from "@/components/lifelog-summary";
 import { MealForm } from "@/components/meal-form";
 import type { WorkoutEntry, WorkoutFormData, MealEntry, LifeLogEntry } from "@/lib/types";
-import { Plus, Dumbbell, Utensils, FlaskConical, Sun, Moon } from "lucide-react";
+import { Plus, Dumbbell, Utensils, FlaskConical, Sun, Moon, Menu } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiGet } from "@/lib/api-client";
@@ -34,6 +43,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [mealOpen, setMealOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authSecret, setAuthSecret] = useState("");
   const [listDisplay, setListDisplay] = useState<{ label: string; count: number } | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [pendingFormData, setPendingFormData] = useState<WorkoutFormData | null>(null);
@@ -110,25 +122,20 @@ export default function Home() {
       <header className="border-b bg-card">
         <div className="max-w-5xl mx-auto px-4 pt-3 pb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Dumbbell className="h-6 w-6 text-primary" />
-            <h1 className="text-lg font-bold tracking-tight">PFC Workout Tracker</h1>
+            <Dumbbell className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            <h1 className="text-base sm:text-lg font-bold tracking-tight">PFC Workout Tracker</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8"
-              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-              aria-label="ダークモード切り替え"
-            >
-              {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-          <div className="hidden sm:flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <Sun className="h-3.5 w-3.5 text-muted-foreground" />
+              <Switch
+                checked={resolvedTheme === "dark"}
+                onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                aria-label="ダークモード切り替え"
+              />
+              <Moon className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
             <Dialog open={mealOpen} onOpenChange={setMealOpen}>
-              <DialogTrigger render={<Button size="sm" variant="outline" className="h-auto pt-1 pb-1.5" />}>
-                <Utensils className="h-4 w-4 mr-1" />
-                食事を追加
-              </DialogTrigger>
               <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-lg flex flex-col max-h-[90dvh]">
                 <DialogHeader>
                   <DialogTitle>食事を記録</DialogTitle>
@@ -142,10 +149,6 @@ export default function Home() {
               </DialogContent>
             </Dialog>
             <Dialog open={open} onOpenChange={handleWorkoutOpenChange}>
-              <DialogTrigger render={<Button size="sm" className="h-auto pt-1 pb-1.5 hover:bg-primary/80" />}>
-                <Plus className="h-4 w-4 mr-1" />
-                筋トレを追加
-              </DialogTrigger>
               <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-lg">
                 <DialogHeader>
                   <DialogTitle>新しい記録を追加</DialogTitle>
@@ -160,7 +163,74 @@ export default function Home() {
                 />
               </DialogContent>
             </Dialog>
-          </div>
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger
+                render={
+                  <Button size="icon" variant="ghost" className="h-10 w-10 sm:h-8 sm:w-8" aria-label="メニュー" />
+                }
+              >
+                <Menu className="h-5 w-5 sm:h-4 sm:w-4" />
+              </SheetTrigger>
+              <SheetContent side="right">
+                <SheetHeader>
+                  <SheetTitle>メニュー</SheetTitle>
+                </SheetHeader>
+                <div className="px-4 space-y-2">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setAuthOpen(true);
+                    }}
+                  >
+                    Fitbit 再認証
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+            <Dialog open={authOpen} onOpenChange={setAuthOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Fitbit 再認証</DialogTitle>
+                </DialogHeader>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    window.open(
+                      `/api/fitbit/auth?secret=${encodeURIComponent(authSecret)}`,
+                      "_blank",
+                    );
+                    setAuthOpen(false);
+                    setAuthSecret("");
+                  }}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="fitbit-auth-secret">シークレット</Label>
+                    <Input
+                      id="fitbit-auth-secret"
+                      type="password"
+                      value={authSecret}
+                      onChange={(e) => setAuthSecret(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      FITBIT_AUTH_SECRET を入力してください
+                    </p>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setAuthOpen(false)}>
+                      キャンセル
+                    </Button>
+                    <Button type="submit" disabled={!authSecret}>
+                      認証ページを開く
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </header>
