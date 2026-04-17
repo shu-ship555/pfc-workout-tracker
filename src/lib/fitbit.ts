@@ -5,8 +5,8 @@ export async function updateVercelEnvVar(key: string, value: string): Promise<vo
   const teamId = process.env.VERCEL_TEAM_ID;
   if (!apiToken || !projectId) return;
 
-  const qs = new URLSearchParams({ ...(teamId && { teamId }), limit: "100" });
-  const listRes = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env?${qs}`, {
+  const teamQs = teamId ? `&teamId=${teamId}` : "";
+  const listRes = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env?limit=100${teamQs}`, {
     headers: { Authorization: `Bearer ${apiToken}` },
   });
   if (!listRes.ok) {
@@ -21,7 +21,8 @@ export async function updateVercelEnvVar(key: string, value: string): Promise<vo
 
   await Promise.all(
     targets.map(async (env) => {
-      const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env/${env.id}${qs}`, {
+      const patchQs = teamId ? `?teamId=${teamId}` : "";
+      const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env/${env.id}${patchQs}`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({ value }),
