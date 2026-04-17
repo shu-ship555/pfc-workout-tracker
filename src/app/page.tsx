@@ -32,6 +32,7 @@ import { useTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiGet } from "@/lib/api-client";
 import { useCrudList } from "@/hooks/use-crud-list";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
