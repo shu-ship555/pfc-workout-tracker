@@ -314,6 +314,7 @@ export default function Home() {
           onDelete={removeWorkout}
           onDisplayChange={setListDisplay}
         />
+        <SpeedInsights />
       </main>
     </div>
   );
