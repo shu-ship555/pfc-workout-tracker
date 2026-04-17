@@ -47,7 +47,7 @@ export async function GET(req: Request) {
   process.env.FITBIT_ACCESS_TOKEN = data.access_token;
   process.env.FITBIT_REFRESH_TOKEN = data.refresh_token;
 
-  let envUpdateOk = true;
+  let envUpdateError: string | null = null;
   try {
     await Promise.all([
       updateVercelEnvVar("FITBIT_ACCESS_TOKEN", data.access_token),
@@ -55,7 +55,7 @@ export async function GET(req: Request) {
     ]);
   } catch (err) {
     console.error("[fitbit/callback] Vercel env update failed:", err);
-    envUpdateOk = false;
+    envUpdateError = err instanceof Error ? err.message : String(err);
   }
 
   const isDev = process.env.NODE_ENV === "development";
@@ -63,9 +63,9 @@ export async function GET(req: Request) {
     success: true,
     message: isDev
       ? "Fitbit認証が完了しました。下記を .env.local にコピーしてください。"
-      : envUpdateOk
+      : !envUpdateError
         ? "Fitbit認証が完了しました。"
-        : "Fitbit認証は完了しましたが、Vercel環境変数の更新に失敗しました。再デプロイが必要です。",
+        : `Fitbit認証は完了しましたが、Vercel環境変数の更新に失敗しました: ${envUpdateError}`,
     ...(isDev && {
       env: {
         FITBIT_ACCESS_TOKEN: data.access_token,
