@@ -24,7 +24,7 @@ export async function GET(req: Request) {
       client_id: clientId,
       redirect_uri: redirectUri,
       scope: "activity sleep weight",
-      expires_in: "604800",
+      expires_in: "31536000",
     }).toString();
 
   return NextResponse.redirect(url);
