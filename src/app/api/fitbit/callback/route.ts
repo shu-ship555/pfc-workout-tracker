@@ -35,7 +35,13 @@ export async function GET(req: Request) {
 
   const data = await res.json();
   if (!res.ok) {
-    return NextResponse.json({ error: data }, { status: 400 });
+    console.error("[fitbit/callback] token exchange failed:", {
+      redirectUri,
+      NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL ?? "(unset)",
+      VERCEL_URL: process.env.VERCEL_URL ?? "(unset)",
+      error: data,
+    });
+    return NextResponse.json({ error: data, debug: { redirectUri } }, { status: 400 });
   }
 
   process.env.FITBIT_ACCESS_TOKEN = data.access_token;
