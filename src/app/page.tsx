@@ -198,12 +198,17 @@ export default function Home() {
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    window.open(
+                    const authWindow = window.open(
                       `/api/fitbit/auth?secret=${encodeURIComponent(authSecret)}`,
                       "_blank",
                     );
                     setAuthOpen(false);
                     setAuthSecret("");
+                    if (authWindow) {
+                      setTimeout(() => {
+                        location.reload();
+                      }, 2000);
+                    }
                   }}
                   className="space-y-4"
                 >
