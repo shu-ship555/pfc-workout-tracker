@@ -1,3 +1,18 @@
+/**
+ * Vercel Deploy Hook を叩いて新しいデプロイメントをトリガーする。
+ * トークンをリフレッシュしても既存デプロイのプロセスには反映されないため、
+ * 再デプロイによってフレッシュなトークンをスナップショットに焼き込む。
+ */
+export async function triggerRedeploy(): Promise<void> {
+  const hookUrl = process.env.VERCEL_DEPLOY_HOOK_URL;
+  if (!hookUrl || process.env.NODE_ENV !== "production") return;
+  try {
+    await fetch(hookUrl, { method: "POST" });
+  } catch (err) {
+    console.error("[triggerRedeploy] Deploy hook failed:", err);
+  }
+}
+
 /** Vercel環境変数を Vercel API 経由で更新する */
 export async function updateVercelEnvVar(key: string, value: string): Promise<void> {
   const apiToken = process.env.VERCEL_TOKEN;
@@ -90,6 +105,9 @@ async function doRefreshFitbitToken(): Promise<string> {
     updateVercelEnvVar("FITBIT_ACCESS_TOKEN", data.access_token),
     updateVercelEnvVar("FITBIT_REFRESH_TOKEN", data.refresh_token),
   ]);
+
+  // 環境変数はデプロイ時にスナップショットされるため、再デプロイして新トークンを反映させる
+  await triggerRedeploy();
 
   return data.access_token as string;
 }

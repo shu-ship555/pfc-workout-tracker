@@ -205,9 +205,13 @@ export default function Home() {
                     setAuthOpen(false);
                     setAuthSecret("");
                     if (authWindow) {
-                      setTimeout(() => {
-                        location.reload();
-                      }, 2000);
+                      const handleMessage = (event: MessageEvent) => {
+                        if (event.data?.type === "fitbit-auth-complete") {
+                          window.removeEventListener("message", handleMessage);
+                          location.reload();
+                        }
+                      };
+                      window.addEventListener("message", handleMessage);
                     }
                   }}
                   className="space-y-4"

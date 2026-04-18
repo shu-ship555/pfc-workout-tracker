@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { updateVercelEnvVar } from "@/lib/fitbit";
+import { updateVercelEnvVar, triggerRedeploy } from "@/lib/fitbit";
 
 /** Fitbit OAuth コールバック。認証コードをトークンに交換し Vercel 環境変数に保存する */
 export async function GET(req: Request) {
@@ -53,24 +53,40 @@ export async function GET(req: Request) {
       updateVercelEnvVar("FITBIT_ACCESS_TOKEN", data.access_token),
       updateVercelEnvVar("FITBIT_REFRESH_TOKEN", data.refresh_token),
     ]);
+    await triggerRedeploy();
   } catch (err) {
     console.error("[fitbit/callback] Vercel env update failed:", err);
     envUpdateError = err instanceof Error ? err.message : String(err);
   }
 
   const isDev = process.env.NODE_ENV === "development";
-  return NextResponse.json({
-    success: true,
-    message: isDev
-      ? "Fitbit認証が完了しました。下記を .env.local にコピーしてください。"
-      : !envUpdateError
-        ? "Fitbit認証が完了しました。"
-        : `Fitbit認証は完了しましたが、Vercel環境変数の更新に失敗しました: ${envUpdateError}`,
-    ...(isDev && {
+  if (isDev) {
+    return NextResponse.json({
+      success: true,
+      message: "Fitbit認証が完了しました。下記を .env.local にコピーしてください。",
       env: {
         FITBIT_ACCESS_TOKEN: data.access_token,
         FITBIT_REFRESH_TOKEN: data.refresh_token,
       },
-    }),
-  });
+    });
+  }
+
+  // 本番: 親ウィンドウにpostMessageして自動的に閉じるHTMLを返す
+  const message = !envUpdateError
+    ? "Fitbit認証が完了しました。"
+    : `Fitbit認証は完了しましたが、Vercel環境変数の更新に失敗しました: ${envUpdateError}`;
+  const html = `<!DOCTYPE html>
+<html lang="ja">
+<head><meta charset="utf-8"><title>Fitbit 認証完了</title></head>
+<body>
+<p>${message}</p>
+<script>
+if (window.opener) {
+  window.opener.postMessage({ type: 'fitbit-auth-complete' }, window.location.origin);
+}
+window.close();
+</script>
+</body>
+</html>`;
+  return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
