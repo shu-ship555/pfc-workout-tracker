@@ -36,6 +36,12 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
+// 機能フラグ: 復元する際は true に変更する
+const FEATURES = {
+  LIFELOG: false,
+  FITBIT_REAUTH: false,
+} as const;
+
 export default function Home() {
   const { resolvedTheme, setTheme } = useTheme();
   const { items: workouts, setItems: setWorkouts, add: addWorkout, update: updateWorkout, remove: removeWorkout } = useCrudList<WorkoutEntry>();
@@ -62,7 +68,7 @@ export default function Home() {
       apiGet<WorkoutEntry[]>("/api/workouts"),
       apiGet<MealEntry[]>("/api/meals"),
       fetch("/api/daily-summary").then(async (res) => {
-        if (res.headers.get("x-fitbit-auth-error") === "1") {
+        if (FEATURES.FITBIT_REAUTH && res.headers.get("x-fitbit-auth-error") === "1") {
           appToast.error("Fitbit の再認証が必要です", {
             description: "リフレッシュトークンが無効になっています",
           });
@@ -72,14 +78,15 @@ export default function Home() {
     ]).then(([workoutData, mealData, lifeLogData]) => {
       setWorkouts(workoutData);
       setMeals(mealData);
-      setLifeLogs(lifeLogData);
-
-      const today = lifeLogData[0];
-      if (today && !today.moodSelect && new Date().getHours() >= 20) {
-        appToast.info("気分が未入力です", {
-          description: "ライフログから今日の気分を記録しましょう",
-          duration: 4000,
-        });
+      if (FEATURES.LIFELOG) {
+        setLifeLogs(lifeLogData);
+        const today = lifeLogData[0];
+        if (today && !today.moodSelect && new Date().getHours() >= 20) {
+          appToast.info("気分が未入力です", {
+            description: "ライフログから今日の気分を記録しましょう",
+            duration: 4000,
+          });
+        }
       }
     }).finally(() => setLoading(false));
   }, [setWorkouts, setMeals]);
@@ -164,83 +171,87 @@ export default function Home() {
                 />
               </DialogContent>
             </Dialog>
-            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-              <SheetTrigger
-                render={
-                  <Button size="icon" variant="ghost" className="h-10 w-10 sm:h-8 sm:w-8" aria-label="メニュー" />
-                }
-              >
-                <Menu className="h-5 w-5 sm:h-4 sm:w-4" />
-              </SheetTrigger>
-              <SheetContent side="right">
-                <SheetHeader>
-                  <SheetTitle>メニュー</SheetTitle>
-                </SheetHeader>
-                <div className="px-4 space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setAuthOpen(true);
-                    }}
-                  >
-                    Fitbit 再認証
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
-            <Dialog open={authOpen} onOpenChange={setAuthOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Fitbit 再認証</DialogTitle>
-                </DialogHeader>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const authWindow = window.open(
-                      `/api/fitbit/auth?secret=${encodeURIComponent(authSecret)}`,
-                      "_blank",
-                    );
-                    setAuthOpen(false);
-                    setAuthSecret("");
-                    if (authWindow) {
-                      const handleMessage = (event: MessageEvent) => {
-                        if (event.data?.type === "fitbit-auth-complete") {
-                          window.removeEventListener("message", handleMessage);
-                          location.reload();
-                        }
-                      };
-                      window.addEventListener("message", handleMessage);
+            {FEATURES.FITBIT_REAUTH && (
+              <>
+                <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+                  <SheetTrigger
+                    render={
+                      <Button size="icon" variant="ghost" className="h-10 w-10 sm:h-8 sm:w-8" aria-label="メニュー" />
                     }
-                  }}
-                  className="space-y-4"
-                >
-                  <div className="space-y-2">
-                    <Label htmlFor="fitbit-auth-secret">シークレット</Label>
-                    <Input
-                      id="fitbit-auth-secret"
-                      type="password"
-                      value={authSecret}
-                      onChange={(e) => setAuthSecret(e.target.value)}
-                      required
-                      autoFocus
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      FITBIT_AUTH_SECRET を入力してください
-                    </p>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setAuthOpen(false)}>
-                      キャンセル
-                    </Button>
-                    <Button type="submit" disabled={!authSecret}>
-                      認証ページを開く
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                  >
+                    <Menu className="h-5 w-5 sm:h-4 sm:w-4" />
+                  </SheetTrigger>
+                  <SheetContent side="right">
+                    <SheetHeader>
+                      <SheetTitle>メニュー</SheetTitle>
+                    </SheetHeader>
+                    <div className="px-4 space-y-2">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setAuthOpen(true);
+                        }}
+                      >
+                        Fitbit 再認証
+                      </Button>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+                <Dialog open={authOpen} onOpenChange={setAuthOpen}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Fitbit 再認証</DialogTitle>
+                    </DialogHeader>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const authWindow = window.open(
+                          `/api/fitbit/auth?secret=${encodeURIComponent(authSecret)}`,
+                          "_blank",
+                        );
+                        setAuthOpen(false);
+                        setAuthSecret("");
+                        if (authWindow) {
+                          const handleMessage = (event: MessageEvent) => {
+                            if (event.data?.type === "fitbit-auth-complete") {
+                              window.removeEventListener("message", handleMessage);
+                              location.reload();
+                            }
+                          };
+                          window.addEventListener("message", handleMessage);
+                        }
+                      }}
+                      className="space-y-4"
+                    >
+                      <div className="space-y-2">
+                        <Label htmlFor="fitbit-auth-secret">シークレット</Label>
+                        <Input
+                          id="fitbit-auth-secret"
+                          type="password"
+                          value={authSecret}
+                          onChange={(e) => setAuthSecret(e.target.value)}
+                          required
+                          autoFocus
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          FITBIT_AUTH_SECRET を入力してください
+                        </p>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={() => setAuthOpen(false)}>
+                          キャンセル
+                        </Button>
+                        <Button type="submit" disabled={!authSecret}>
+                          認証ページを開く
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -288,11 +299,13 @@ export default function Home() {
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-5 pb-24 sm:pb-6 space-y-6">
         <PFCSummary meals={meals} lifeLogs={lifeLogs} loading={loading} onMealDelete={removeMeal} onMealUpdate={updateMeal} />
 
-        <Separator className="mt-10 mb-12" />
-
-        <LifeLogSummary logs={lifeLogs} loading={loading} onRefresh={fetchLifeLogs} />
-
-        <Separator className="mt-10 mb-12" />
+        {FEATURES.LIFELOG && (
+          <>
+            <Separator className="mt-10 mb-12" />
+            <LifeLogSummary logs={lifeLogs} loading={loading} onRefresh={fetchLifeLogs} />
+            <Separator className="mt-10 mb-12" />
+          </>
+        )}
 
         <WorkoutChart workouts={workouts} />
 
