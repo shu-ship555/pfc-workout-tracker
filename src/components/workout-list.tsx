@@ -373,7 +373,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
       <Dialog open={!!memoTarget} onOpenChange={(o) => !o && setMemoTarget(null)}>
         <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-[10px] sm:text-xs text-zinc-500 font-medium">
+            <DialogTitle className="text-[10px] sm:text-xs text-muted-foreground font-medium">
               {memoTarget?.exercise} のメモ
             </DialogTitle>
           </DialogHeader>

@@ -213,7 +213,7 @@ export function WorkoutForm({ initial, initialData, addedCount, onSuccess, onCon
                   onChange={(e) => setContinuousMode(e.target.checked)}
                 />
                 <span className="h-4 w-7 rounded-full bg-muted peer-checked:bg-primary transition-colors" />
-                <span className="absolute left-0.5 top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform peer-checked:translate-x-3" />
+                <span className="absolute left-0.5 top-0.5 h-3 w-3 rounded-full bg-background shadow transition-transform peer-checked:translate-x-3" />
               </div>
               連続入力
             </label>

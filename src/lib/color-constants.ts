@@ -53,6 +53,15 @@ export const STATUS_COLORS = {
   alert:   "text-red-700 dark:text-red-400",
 } as const;
 
+// ─── デモモードバナー ────────────────────────────────────────────────────────
+// DESIGN.md セマンティックカラー: 黄（注意）系を使用
+
+export const DEMO_BANNER = {
+  bg:     "bg-amber-500/10",
+  border: "border-amber-500/30",
+  text:   "text-amber-600 dark:text-amber-400",
+} as const;
+
 // ─── チャートストローク（recharts props 向け CSS 変数文字列）────────────────
 
 export const CHART_COLORS = {
