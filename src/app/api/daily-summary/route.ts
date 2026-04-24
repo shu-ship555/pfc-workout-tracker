@@ -19,9 +19,9 @@ export async function GET() {
     process.env.OPENWEATHER_API_KEY
       ? fetchTodayWeather(city, process.env.OPENWEATHER_API_KEY)
       : Promise.reject(new Error("OPENWEATHER_API_KEY not set")),
-    process.env.FITBIT_ACCESS_TOKEN
+    process.env.NOTION_CONFIG_DATABASE_ID
       ? fetchTodayFitbit()
-      : Promise.reject(new Error("FITBIT_ACCESS_TOKEN not set")),
+      : Promise.reject(new Error("NOTION_CONFIG_DATABASE_ID not set")),
   ]);
 
   if (weatherResult.status === "rejected") {
