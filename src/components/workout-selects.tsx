@@ -33,7 +33,7 @@ export function PartSelect({
       <SelectTrigger className={triggerClassName}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent alignItemWithTrigger={false}>
         {includeAll && (
           <SelectItem value="すべて" className="text-xs">すべて</SelectItem>
         )}
@@ -76,7 +76,7 @@ export function ExerciseSelect({
       <SelectTrigger className={triggerClassName}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent className="min-w-max">
+      <SelectContent className="min-w-max" alignItemWithTrigger={false}>
         {includeAll && (
           <SelectItem value="すべて" className="text-xs">すべて</SelectItem>
         )}
