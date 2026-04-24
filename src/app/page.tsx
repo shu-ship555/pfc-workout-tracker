@@ -36,10 +36,9 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
-// 機能フラグ: 復元する際は true に変更する
 const FEATURES = {
-  LIFELOG: false,
-  FITBIT_REAUTH: false,
+  LIFELOG: true,
+  FITBIT_REAUTH: true,
 } as const;
 
 export default function Home() {

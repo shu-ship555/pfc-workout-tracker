@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { updateVercelEnvVar, triggerRedeploy } from "@/lib/fitbit";
+import { setFitbitTokens } from "@/lib/notion";
 
-/** Fitbit OAuth コールバック。認証コードをトークンに交換し Vercel 環境変数に保存する */
+/** Fitbit OAuth コールバック。認証コードをトークンに交換し Notion Config DB に保存する */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
@@ -44,26 +44,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: data, debug: { redirectUri } }, { status: 400 });
   }
 
-  process.env.FITBIT_ACCESS_TOKEN = data.access_token;
-  process.env.FITBIT_REFRESH_TOKEN = data.refresh_token;
-
-  let envUpdateError: string | null = null;
+  let saveError: string | null = null;
   try {
-    await Promise.all([
-      updateVercelEnvVar("FITBIT_ACCESS_TOKEN", data.access_token),
-      updateVercelEnvVar("FITBIT_REFRESH_TOKEN", data.refresh_token),
-    ]);
-    await triggerRedeploy();
+    await setFitbitTokens(data.access_token, data.refresh_token);
   } catch (err) {
-    console.error("[fitbit/callback] Vercel env update failed:", err);
-    envUpdateError = err instanceof Error ? err.message : String(err);
+    console.error("[fitbit/callback] Notion token save failed:", err);
+    saveError = err instanceof Error ? err.message : String(err);
   }
 
   const isDev = process.env.NODE_ENV === "development";
   if (isDev) {
     return NextResponse.json({
       success: true,
-      message: "Fitbit認証が完了しました。下記を .env.local にコピーしてください。",
+      message: "Fitbit認証が完了しました。トークンは Notion Config DB に保存されました。",
+      ...(saveError && { warning: saveError }),
       env: {
         FITBIT_ACCESS_TOKEN: data.access_token,
         FITBIT_REFRESH_TOKEN: data.refresh_token,
@@ -71,10 +65,9 @@ export async function GET(req: Request) {
     });
   }
 
-  // 本番: 親ウィンドウにpostMessageして自動的に閉じるHTMLを返す
-  const message = !envUpdateError
+  const message = !saveError
     ? "Fitbit認証が完了しました。"
-    : `Fitbit認証は完了しましたが、Vercel環境変数の更新に失敗しました: ${envUpdateError}`;
+    : `Fitbit認証は完了しましたが、Notion への保存に失敗しました: ${saveError}`;
   const html = `<!DOCTYPE html>
 <html lang="ja">
 <head><meta charset="utf-8"><title>Fitbit 認証完了</title></head>

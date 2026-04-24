@@ -1,53 +1,4 @@
-/**
- * Vercel Deploy Hook を叩いて新しいデプロイメントをトリガーする。
- * トークンをリフレッシュしても既存デプロイのプロセスには反映されないため、
- * 再デプロイによってフレッシュなトークンをスナップショットに焼き込む。
- */
-export async function triggerRedeploy(): Promise<void> {
-  const hookUrl = process.env.VERCEL_DEPLOY_HOOK_URL;
-  if (!hookUrl || process.env.NODE_ENV !== "production") return;
-  try {
-    await fetch(hookUrl, { method: "POST" });
-  } catch (err) {
-    console.error("[triggerRedeploy] Deploy hook failed:", err);
-  }
-}
-
-/** Vercel環境変数を Vercel API 経由で更新する */
-export async function updateVercelEnvVar(key: string, value: string): Promise<void> {
-  const apiToken = process.env.VERCEL_TOKEN;
-  const projectId = process.env.VERCEL_PROJECT_ID;
-  const teamId = process.env.VERCEL_TEAM_ID;
-  if (!apiToken || !projectId) return;
-
-  const teamQs = teamId ? `&teamId=${teamId}` : "";
-  const listRes = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env?limit=100${teamQs}`, {
-    headers: { Authorization: `Bearer ${apiToken}` },
-  });
-  if (!listRes.ok) {
-    throw new Error(`Vercel env list failed: ${listRes.status} ${await listRes.text()}`);
-  }
-  const listData = await listRes.json();
-  const envs: { id: string; key: string }[] = listData.envs ?? [];
-  const targets = envs.filter((e) => e.key === key);
-  if (targets.length === 0) {
-    console.warn(`[updateVercelEnvVar] No env var found for key "${key}" (total: ${envs.length})`);
-  }
-
-  await Promise.all(
-    targets.map(async (env) => {
-      const patchQs = teamId ? `?teamId=${teamId}` : "";
-      const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env/${env.id}${patchQs}`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ value }),
-      });
-      if (!res.ok) {
-        throw new Error(`Vercel env update failed for ${key}: ${res.status} ${await res.text()}`);
-      }
-    })
-  );
-}
+import { getFitbitTokens, setFitbitTokens } from "./notion";
 
 /** Fitbit の refresh_token が無効化された（invalid_grant）ことを示すエラー */
 export class FitbitAuthError extends Error {
@@ -55,6 +6,32 @@ export class FitbitAuthError extends Error {
     super(message);
     this.name = "FitbitAuthError";
   }
+}
+
+// ウォームインスタンス内でのトークンキャッシュ
+let tokenCache: { accessToken: string; refreshToken: string } | null = null;
+
+async function loadTokens(): Promise<{ accessToken: string; refreshToken: string }> {
+  if (tokenCache) return tokenCache;
+
+  if (process.env.NOTION_CONFIG_DATABASE_ID) {
+    try {
+      const tokens = await getFitbitTokens();
+      if (tokens.accessToken && tokens.refreshToken) {
+        tokenCache = tokens;
+        return tokenCache;
+      }
+    } catch (err) {
+      console.warn("[fitbit] Notion token load failed, falling back to env:", err);
+    }
+  }
+
+  // フォールバック: 環境変数（初回セットアップ時）
+  tokenCache = {
+    accessToken: process.env.FITBIT_ACCESS_TOKEN ?? "",
+    refreshToken: process.env.FITBIT_REFRESH_TOKEN ?? "",
+  };
+  return tokenCache;
 }
 
 // refresh_token は使い捨てのため、並行実行を1回に集約する
@@ -69,10 +46,25 @@ async function refreshFitbitToken(): Promise<string> {
 }
 
 async function doRefreshFitbitToken(): Promise<string> {
-  const { FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET, FITBIT_REFRESH_TOKEN } = process.env;
-  if (!FITBIT_CLIENT_ID || !FITBIT_CLIENT_SECRET || !FITBIT_REFRESH_TOKEN) {
+  const { FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET } = process.env;
+  if (!FITBIT_CLIENT_ID || !FITBIT_CLIENT_SECRET) {
     throw new Error("Fitbit credentials not configured");
   }
+
+  // リフレッシュ時は常に Notion から最新トークンを読む（再認証後のキャッシュ陳腐化対策）
+  let refreshToken: string;
+  if (process.env.NOTION_CONFIG_DATABASE_ID) {
+    try {
+      const tokens = await getFitbitTokens();
+      refreshToken = tokens.refreshToken;
+    } catch {
+      refreshToken = tokenCache?.refreshToken ?? process.env.FITBIT_REFRESH_TOKEN ?? "";
+    }
+  } else {
+    refreshToken = tokenCache?.refreshToken ?? process.env.FITBIT_REFRESH_TOKEN ?? "";
+  }
+
+  if (!refreshToken) throw new Error("FITBIT_REFRESH_TOKEN not configured");
 
   const credentials = Buffer.from(`${FITBIT_CLIENT_ID}:${FITBIT_CLIENT_SECRET}`).toString("base64");
   const res = await fetch("https://api.fitbit.com/oauth2/token", {
@@ -83,7 +75,7 @@ async function doRefreshFitbitToken(): Promise<string> {
     },
     body: new URLSearchParams({
       grant_type: "refresh_token",
-      refresh_token: FITBIT_REFRESH_TOKEN,
+      refresh_token: refreshToken,
     }),
   });
 
@@ -96,32 +88,26 @@ async function doRefreshFitbitToken(): Promise<string> {
     throw new Error(`Fitbit token refresh failed: ${JSON.stringify(data.errors)}`);
   }
 
-  // 現在のプロセスにも即反映
-  process.env.FITBIT_ACCESS_TOKEN = data.access_token;
-  process.env.FITBIT_REFRESH_TOKEN = data.refresh_token;
+  // キャッシュ更新
+  tokenCache = { accessToken: data.access_token, refreshToken: data.refresh_token };
 
-  // Vercel 環境変数の永続化を待つ（失敗すると次回 invocation で invalid_grant になるため）
-  await Promise.all([
-    updateVercelEnvVar("FITBIT_ACCESS_TOKEN", data.access_token),
-    updateVercelEnvVar("FITBIT_REFRESH_TOKEN", data.refresh_token),
-  ]);
-
-  // 環境変数はデプロイ時にスナップショットされるため、再デプロイして新トークンを反映させる
-  await triggerRedeploy();
+  // Notion に永続化
+  await setFitbitTokens(data.access_token, data.refresh_token);
 
   return data.access_token as string;
 }
 
 /** Fitbit API への GET リクエスト（401 時は自動リフレッシュ） */
 async function fitbitGet(path: string): Promise<unknown> {
-  if (!process.env.FITBIT_ACCESS_TOKEN) throw new Error("FITBIT_ACCESS_TOKEN not set");
+  const { accessToken } = await loadTokens();
+  if (!accessToken) throw new Error("FITBIT_ACCESS_TOKEN not configured");
 
   const request = (token: string) =>
     fetch(`https://api.fitbit.com${path}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-  let res = await request(process.env.FITBIT_ACCESS_TOKEN);
+  let res = await request(accessToken);
   if (res.status === 401) {
     const newToken = await refreshFitbitToken();
     res = await request(newToken);
