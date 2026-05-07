@@ -1,5 +1,6 @@
 import type { WorkoutEntry, MealEntry, LifeLogEntry } from "./types";
 import type { MealAnalysis } from "./gemini";
+import { shiftDateStr } from "./date-utils";
 
 // 5部位 × 1種目 × 週1回 × 8週間分（ウォームアップ1 + ワーキングセット3）
 // 月:胸/ベンチプレス 火:背中/ラットプルダウン 水:脚/スクワット 木:肩/ショルダープレス 金:腕/バイセップカール
@@ -476,6 +477,24 @@ export function getShiftedDemoLifeLogs(targetDate: string): LifeLogEntry[] {
     d.setUTCDate(d.getUTCDate() + shift);
     return { ...l, date: d.toISOString().split("T")[0].replace(/-/g, "/") };
   });
+}
+
+export function getShiftedDemoWorkouts(today: string): WorkoutEntry[] {
+  const maxDate = DEMO_WORKOUTS.reduce((max, w) => {
+    const d = w.created.split("T")[0];
+    return d > max ? d : max;
+  }, "0000-00-00");
+  const shift = Math.round((Date.parse(today) - Date.parse(maxDate)) / 86400000);
+  const shifted = shift === 0
+    ? [...DEMO_WORKOUTS]
+    : DEMO_WORKOUTS.map((w) => ({ ...w, created: shiftDateStr(w.created, shift) + w.created.slice(10) }));
+  return shifted.sort((a, b) => (a.created < b.created ? 1 : a.created > b.created ? -1 : 0));
+}
+
+export function getShiftedDemoMeals(today: string): MealEntry[] {
+  const maxDate = DEMO_MEALS.reduce((max, m) => (m.date > max ? m.date : max), DEMO_MEALS[0].date);
+  const shift = Math.round((Date.parse(today) - Date.parse(maxDate)) / 86400000);
+  return shift === 0 ? DEMO_MEALS : DEMO_MEALS.map((m) => ({ ...m, date: shiftDateStr(m.date, shift) }));
 }
 
 export function generateDemoId(): string {

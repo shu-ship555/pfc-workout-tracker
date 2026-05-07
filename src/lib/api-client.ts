@@ -14,6 +14,10 @@ async function throwIfNotOk(res: Response): Promise<void> {
 
 const JSON_HEADERS = { "Content-Type": "application/json" } as const;
 
+export function apiFetch(url: string, init?: RequestInit): Promise<Response> {
+  return fetch(url, init);
+}
+
 export async function apiGet<T>(url: string): Promise<T> {
   const res = await fetch(url);
   await throwIfNotOk(res);

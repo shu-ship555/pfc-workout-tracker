@@ -11,7 +11,7 @@ import type { MealEntry, LifeLogEntry, DietGoal } from "@/lib/types";
 import { KCAL_PER_KG } from "@/lib/types";
 import { apiPost } from "@/lib/api-client";
 import { PFC_COLORS } from "@/lib/color-constants";
-import { normalizeDate, jstToday } from "@/lib/date-utils";
+import { normalizeDate, jstToday, jstNow } from "@/lib/date-utils";
 import { calcDietProgress } from "@/lib/diet";
 
 const DOW_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -95,7 +95,7 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
         estimatedLabel = "達成済み";
       } else if (dailyProgress > 0 && remaining > 0) {
         const daysToGoal = Math.ceil(remaining / dailyProgress);
-        const est = new Date(Date.now() + 9 * 3600_000 + daysToGoal * 86400_000);
+        const est = new Date(jstNow().getTime() + daysToGoal * 86400_000);
         estimatedLabel = `${est.getUTCMonth() + 1}/${est.getUTCDate()} 達成予定`;
       }
     }

@@ -35,10 +35,11 @@ type InitData = { workouts: WorkoutEntry[]; meals: MealEntry[]; dietGoal: DietGo
 import { DEMO_BANNER } from "@/lib/color-constants";
 import { Dumbbell, FlaskConical, Sun, Moon, Menu } from "lucide-react";
 import { useTheme } from "next-themes";
-import { apiGet, apiPost } from "@/lib/api-client";
+import { apiFetch, apiGet, apiPost } from "@/lib/api-client";
 import { calcDietProgress } from "@/lib/diet";
 import { useCrudList } from "@/hooks/use-crud-list";
-import { normalizeDate } from "@/lib/date-utils";
+import { normalizeDate, jstNow } from "@/lib/date-utils";
+import { safeLocalStorage } from "@/lib/storage";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -69,7 +70,7 @@ export default function Home() {
   const [draftGoal, setDraftGoal] = useState<DietGoal>({ type: "lose", targetKg: 3, startDate: "", endDate: "" });
   const [savingDietGoal, setSavingDietGoal] = useState(false);
   const [dietCalendarVisible, setDietCalendarVisible] = useState(() => {
-    try { return localStorage.getItem("diet-calendar-visible") !== "false"; } catch { return true; }
+    return safeLocalStorage.get("diet-calendar-visible", "true") !== "false";
   });
 
   useEffect(() => {
@@ -116,7 +117,7 @@ export default function Home() {
       setLifeLogLoading(false);
       return;
     }
-    fetch("/api/daily-summary").then(async (res) => {
+    apiFetch("/api/daily-summary").then(async (res) => {
       if (FEATURES.FITBIT_REAUTH && res.headers.get("x-fitbit-auth-error") === "1") {
         appToast.error("Fitbit の再認証が必要です", {
           description: "リフレッシュトークンが無効になっています",
@@ -138,10 +139,10 @@ export default function Home() {
     if (loading) return;
     if (!dietGoal.startDate || !dietGoal.endDate || !dietGoal.targetKg) return;
 
-    const jstNow = new Date(Date.now() + 9 * 3600_000);
-    if (jstNow.getUTCHours() < 20) return;
+    const now = jstNow();
+    if (now.getUTCHours() < 20) return;
 
-    const todayStr = jstNow.toISOString().slice(0, 10);
+    const todayStr = now.toISOString().slice(0, 10);
 
     const todayIntake = meals
       .filter((m) => normalizeDate(m.date) === todayStr)
@@ -347,7 +348,7 @@ export default function Home() {
                       checked={dietCalendarVisible}
                       onCheckedChange={(v) => {
                         setDietCalendarVisible(v);
-                        try { localStorage.setItem("diet-calendar-visible", String(v)); } catch { }
+                        safeLocalStorage.set("diet-calendar-visible", String(v));
                       }}
                     />
                   </div>

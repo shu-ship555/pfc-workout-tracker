@@ -42,6 +42,7 @@ import type { WorkoutEntry } from "@/lib/types";
 import { jstToday, jstMonthsAgo, formatDateTime } from "@/lib/date-utils";
 import { FLAG_COLORS } from "@/lib/color-constants";
 import { apiDelete } from "@/lib/api-client";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { Dumbbell, Pencil, Trash2, MessageSquare, X } from "lucide-react";
 
 const DAYS_PER_PAGE = 14; // 2週間
@@ -79,8 +80,8 @@ export function WorkoutList({ workouts, loading, paginate = false, hasFullHistor
   const [editTarget, setEditTarget] = useState<WorkoutEntry | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<WorkoutEntry | null>(null);
   const [memoTarget, setMemoTarget] = useState<WorkoutEntry | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [loadingAll, setLoadingAll] = useState(false);
+  const { isPending: deleting, run: runDelete } = useAsyncAction();
+  const { isPending: loadingAll, run: runLoadAll } = useAsyncAction();
   const [canScrollDown, setCanScrollDown] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -145,11 +146,11 @@ export function WorkoutList({ workouts, loading, paginate = false, hasFullHistor
 
   async function confirmDelete() {
     if (!deleteTarget) return;
-    setDeleting(true);
-    await apiDelete(`/api/workouts/${deleteTarget.id}`);
-    onDelete(deleteTarget.id);
-    setDeleteTarget(null);
-    setDeleting(false);
+    await runDelete(async () => {
+      await apiDelete(`/api/workouts/${deleteTarget.id}`);
+      onDelete(deleteTarget.id);
+      setDeleteTarget(null);
+    });
   }
 
   const pageNav = (
@@ -268,11 +269,9 @@ export function WorkoutList({ workouts, loading, paginate = false, hasFullHistor
             size="sm"
             className="h-7 px-2 text-xs"
             disabled={loadingAll}
-            onClick={async () => {
+            onClick={() => {
               if (!onLoadAll) return;
-              setLoadingAll(true);
-              await onLoadAll();
-              setLoadingAll(false);
+              runLoadAll(onLoadAll);
             }}
           >
             {loadingAll ? "読み込み中..." : "全期間を読み込む"}

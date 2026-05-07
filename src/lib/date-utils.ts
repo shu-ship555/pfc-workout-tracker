@@ -3,21 +3,28 @@ export function normalizeDate(date: string): string {
   return date.replace(/\//g, "-");
 }
 
+const JST_OFFSET = 9 * 60 * 60 * 1000;
+
+/** 現在の JST 日時を Date オブジェクトで返す */
+export function jstNow(): Date {
+  return new Date(Date.now() + JST_OFFSET);
+}
+
 /** JST今日の日付を YYYY-MM-DD で返す */
 export function jstToday(): string {
-  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
+  return jstNow().toISOString().split("T")[0];
 }
 
 /** JST で N 日前の日付を YYYY-MM-DD で返す（0 = 今日、1 = 昨日、…） */
 export function jstDaysAgo(offsetDays: number): string {
-  const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const d = jstNow();
   d.setUTCDate(d.getUTCDate() - offsetDays);
   return d.toISOString().split("T")[0];
 }
 
 /** JST で N ヶ月前の日付を YYYY-MM-DD で返す */
 export function jstMonthsAgo(months: number): string {
-  const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const d = jstNow();
   d.setUTCMonth(d.getUTCMonth() - months);
   return d.toISOString().split("T")[0];
 }
