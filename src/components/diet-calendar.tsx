@@ -226,22 +226,24 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
           <div className="flex items-center gap-2 flex-wrap">
             <Calendar className="h-4 w-4 text-primary" />
             <p className="text-sm font-medium">{isLose ? "減量" : "増量"}カレンダー</p>
-            <span className="text-foreground/40 mx-0.5">|</span>
-            <span className="text-xs text-muted-foreground">
-              目標 {isLose ? "-" : "+"}{goal.targetKg}kg
-            </span>
-            <span className="text-foreground/40 mx-0.5">|</span>
-            {(goal.startDate || goal.endDate) && (
+            <span className="flex items-center gap-2 flex-wrap">
+              <span className="text-foreground/40 mx-0.5">|</span>
               <span className="text-xs text-muted-foreground">
-                {goal.startDate ? goal.startDate : (
-                  <button onClick={onSettingsOpen} className="underline underline-offset-2">開始日を設定</button>
-                )}
-                {" 〜 "}
-                {goal.endDate ? goal.endDate : (
-                  <button onClick={onSettingsOpen} className="underline underline-offset-2">終了日を設定</button>
-                )}
+                目標 <span className="font-bold">{isLose ? "-" : "+"}{goal.targetKg}kg</span>
               </span>
-            )}
+              <span className="text-foreground/40 mx-0.5">|</span>
+              {(goal.startDate || goal.endDate) && (
+                <span className="text-xs text-muted-foreground font-bold">
+                  {goal.startDate ? goal.startDate : (
+                    <button onClick={onSettingsOpen} className="underline underline-offset-2">開始日を設定</button>
+                  )}
+                  {" 〜 "}
+                  {goal.endDate ? goal.endDate : (
+                    <button onClick={onSettingsOpen} className="underline underline-offset-2">終了日を設定</button>
+                  )}
+                </span>
+              )}
+            </span>
           </div>
           <Button
             variant="ghost"
