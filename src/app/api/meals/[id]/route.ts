@@ -11,7 +11,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     await deleteMeal(id);
-    revalidateTag("meals");
+    revalidateTag("meals", {});
     return NextResponse.json({ ok: true });
   } catch (e) {
     return apiError(e);
@@ -31,7 +31,7 @@ export async function PATCH(
       return NextResponse.json({ id, date, ...fields });
     }
     const meal = await updateMeal(id, { date, ...fields });
-    revalidateTag("meals");
+    revalidateTag("meals", {});
     return NextResponse.json(meal);
   } catch (e) {
     return apiError(e);

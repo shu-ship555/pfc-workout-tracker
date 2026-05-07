@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       ? body.date
       : jstToday();
     const meal = await createMeal({ date, ...fields });
-    revalidateTag("meals");
+    revalidateTag("meals", {});
     return NextResponse.json(meal);
   } catch (e) {
     return apiError(e);

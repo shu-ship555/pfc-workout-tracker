@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   try {
     const goal = (await req.json()) as DietGoal;
     await setDietGoal(goal);
-    revalidateTag("diet-goal");
+    revalidateTag("diet-goal", {});
     return NextResponse.json(goal);
   } catch (e) {
     console.error("[diet-goal POST]", e);

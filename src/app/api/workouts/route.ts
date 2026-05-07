@@ -31,6 +31,6 @@ export async function POST(request: Request) {
     );
   }
   const workout = await createWorkout(data);
-  revalidateTag("workouts");
+  revalidateTag("workouts", {});
   return NextResponse.json(workout, { status: 201 });
 }
