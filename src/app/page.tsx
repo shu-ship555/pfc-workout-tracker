@@ -116,7 +116,7 @@ export default function Home() {
         const data = res.ok ? await (res.json() as Promise<LifeLogEntry[]>) : [];
         setLifeLogs(data);
         const today = data[0];
-        if (today && !today.moodSelect && new Date().getHours() >= 20) {
+        if (today && !today.moodSelect && new Date().getHours() >= 22) {
           appToast.info("気分が未入力です", {
             description: "ライフログから今日の気分を記録しましょう",
             duration: 4000,
@@ -136,8 +136,6 @@ export default function Home() {
     if (jstNow.getUTCHours() < 20) return;
 
     const todayStr = jstNow.toISOString().slice(0, 10);
-    const shownKey = `diet-goal-toast-${todayStr}`;
-    if (localStorage.getItem(shownKey)) return;
 
     const todayIntake = meals
       .filter((m) => normalizeDate(m.date) === todayStr)
@@ -159,7 +157,6 @@ export default function Home() {
       appToast.warning(title, {
         description: `今日の目標収支 ${sign}${dailyTarget.toLocaleString()}kcal に達していません`,
       });
-      localStorage.setItem(shownKey, "1");
     }
   }, [loading, meals, lifeLogs, dietGoal]);
 
