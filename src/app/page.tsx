@@ -51,6 +51,7 @@ export default function Home() {
   const { items: meals, setItems: setMeals, add: addMeal, update: updateMeal, remove: removeMeal } = useCrudList<MealEntry>();
   const [lifeLogs, setLifeLogs] = useState<LifeLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lifeLogLoading, setLifeLogLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [mealOpen, setMealOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -100,28 +101,31 @@ export default function Home() {
     Promise.all([
       apiGet<WorkoutEntry[]>("/api/workouts"),
       apiGet<MealEntry[]>("/api/meals"),
+    ]).then(([workoutData, mealData]) => {
+      setWorkouts(workoutData);
+      setMeals(mealData);
+    }).finally(() => setLoading(false));
+
+    if (FEATURES.LIFELOG) {
       fetch("/api/daily-summary").then(async (res) => {
         if (FEATURES.FITBIT_REAUTH && res.headers.get("x-fitbit-auth-error") === "1") {
           appToast.error("Fitbit の再認証が必要です", {
             description: "リフレッシュトークンが無効になっています",
           });
         }
-        return res.ok ? (res.json() as Promise<LifeLogEntry[]>) : ([] as LifeLogEntry[]);
-      }).catch(() => [] as LifeLogEntry[]),
-    ]).then(([workoutData, mealData, lifeLogData]) => {
-      setWorkouts(workoutData);
-      setMeals(mealData);
-      if (FEATURES.LIFELOG) {
-        setLifeLogs(lifeLogData);
-        const today = lifeLogData[0];
+        const data = res.ok ? await (res.json() as Promise<LifeLogEntry[]>) : [];
+        setLifeLogs(data);
+        const today = data[0];
         if (today && !today.moodSelect && new Date().getHours() >= 20) {
           appToast.info("気分が未入力です", {
             description: "ライフログから今日の気分を記録しましょう",
             duration: 4000,
           });
         }
-      }
-    }).finally(() => setLoading(false));
+      }).catch(() => {}).finally(() => setLifeLogLoading(false));
+    } else {
+      setLifeLogLoading(false);
+    }
   }, [setWorkouts, setMeals]);
 
   useEffect(() => {
@@ -428,7 +432,7 @@ export default function Home() {
         {FEATURES.LIFELOG && (
           <>
             <Separator className="mt-10 mb-12" />
-            <LifeLogSummary logs={lifeLogs} loading={loading} onRefresh={fetchLifeLogs} />
+            <LifeLogSummary logs={lifeLogs} loading={lifeLogLoading} onRefresh={fetchLifeLogs} />
             <Separator className="mt-10 mb-12" />
           </>
         )}
