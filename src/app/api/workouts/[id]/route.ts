@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { updateWorkout, deleteWorkout } from "@/lib/notion";
 import { IS_DEMO } from "@/lib/api-utils";
 
@@ -12,6 +13,7 @@ export async function PUT(
     return NextResponse.json({ ...data, id, created: new Date().toISOString() });
   }
   const workout = await updateWorkout(id, data);
+  revalidateTag("workouts");
   return NextResponse.json(workout);
 }
 
@@ -22,5 +24,6 @@ export async function DELETE(
   if (IS_DEMO) return new NextResponse(null, { status: 204 });
   const { id } = await params;
   await deleteWorkout(id);
+  revalidateTag("workouts");
   return new NextResponse(null, { status: 204 });
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { deleteMeal, updateMeal } from "@/lib/notion";
 import { IS_DEMO, apiError, parseMealBody } from "@/lib/api-utils";
 
@@ -10,6 +11,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     await deleteMeal(id);
+    revalidateTag("meals");
     return NextResponse.json({ ok: true });
   } catch (e) {
     return apiError(e);
@@ -29,6 +31,7 @@ export async function PATCH(
       return NextResponse.json({ id, date, ...fields });
     }
     const meal = await updateMeal(id, { date, ...fields });
+    revalidateTag("meals");
     return NextResponse.json(meal);
   } catch (e) {
     return apiError(e);

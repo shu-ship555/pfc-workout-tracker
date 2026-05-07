@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getDietGoal, setDietGoal } from "@/lib/notion";
 import type { DietGoal } from "@/lib/types";
 
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
   try {
     const goal = (await req.json()) as DietGoal;
     await setDietGoal(goal);
+    revalidateTag("diet-goal");
     return NextResponse.json(goal);
   } catch (e) {
     console.error("[diet-goal POST]", e);

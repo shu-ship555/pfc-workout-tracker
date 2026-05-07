@@ -28,7 +28,7 @@ function pageToWorkout(page: any): WorkoutEntry {
   };
 }
 
-export async function listWorkouts(): Promise<WorkoutEntry[]> {
+export async function listWorkouts(since?: string): Promise<WorkoutEntry[]> {
   const results: WorkoutEntry[] = [];
   let cursor: string | undefined;
   do {
@@ -37,6 +37,7 @@ export async function listWorkouts(): Promise<WorkoutEntry[]> {
       sorts: [{ timestamp: "created_time", direction: "descending" }],
       page_size: 100,
       ...(cursor ? { start_cursor: cursor } : {}),
+      ...(since ? { filter: { timestamp: "created_time", created_time: { on_or_after: since } } } : {}),
     });
     results.push(...response.results.map(pageToWorkout));
     cursor = response.has_more && response.next_cursor ? response.next_cursor : undefined;
@@ -103,7 +104,7 @@ function pageToMeal(page: any): MealEntry {
   };
 }
 
-export async function listMeals(): Promise<MealEntry[]> {
+export async function listMeals(since?: string): Promise<MealEntry[]> {
   const results: MealEntry[] = [];
   let cursor: string | undefined;
   do {
@@ -112,6 +113,7 @@ export async function listMeals(): Promise<MealEntry[]> {
       sorts: [{ property: "Date", direction: "descending" }],
       page_size: 100,
       ...(cursor ? { start_cursor: cursor } : {}),
+      ...(since ? { filter: { property: "Date", date: { on_or_after: since } } } : {}),
     });
     results.push(...response.results.map(pageToMeal));
     cursor = response.has_more && response.next_cursor ? response.next_cursor : undefined;

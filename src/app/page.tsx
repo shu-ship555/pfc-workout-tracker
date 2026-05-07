@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { appToast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,8 @@ import { MealForm } from "@/components/meal-form";
 import { ActionButtons } from "@/components/action-buttons";
 import { DietCalendar } from "@/components/diet-calendar";
 import type { WorkoutEntry, WorkoutFormData, MealEntry, LifeLogEntry, DietGoal } from "@/lib/types";
+
+type InitData = { workouts: WorkoutEntry[]; meals: MealEntry[]; dietGoal: DietGoal };
 import { DEMO_BANNER } from "@/lib/color-constants";
 import { Dumbbell, FlaskConical, Sun, Moon, Menu } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -50,8 +53,8 @@ export default function Home() {
   const { items: workouts, setItems: setWorkouts, add: addWorkout, update: updateWorkout, remove: removeWorkout } = useCrudList<WorkoutEntry>();
   const { items: meals, setItems: setMeals, add: addMeal, update: updateMeal, remove: removeMeal } = useCrudList<MealEntry>();
   const [lifeLogs, setLifeLogs] = useState<LifeLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [lifeLogLoading, setLifeLogLoading] = useState(true);
+  const { data: initData, isLoading: loading, mutate: mutateInit } = useSWR<InitData>("/api/init", apiGet);
   const [open, setOpen] = useState(false);
   const [mealOpen, setMealOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -61,6 +64,7 @@ export default function Home() {
   const [pendingFormData, setPendingFormData] = useState<WorkoutFormData | null>(null);
   const [addedCount, setAddedCount] = useState(0);
   const [dietGoal, setDietGoal] = useState<DietGoal>({ type: "lose", targetKg: 3, startDate: "", endDate: "" });
+  const [allDataLoaded, setAllDataLoaded] = useState(false);
   const [dietSettingsOpen, setDietSettingsOpen] = useState(false);
   const [draftGoal, setDraftGoal] = useState<DietGoal>({ type: "lose", targetKg: 3, startDate: "", endDate: "" });
   const [savingDietGoal, setSavingDietGoal] = useState(false);
@@ -69,11 +73,13 @@ export default function Home() {
   });
 
   useEffect(() => {
-    apiGet<DietGoal>("/api/diet-goal").then((g) => {
-      setDietGoal(g);
-      setDraftGoal(g);
-    }).catch(() => { });
-  }, []);
+    if (!initData) return;
+    if (!allDataLoaded) {
+      setWorkouts(initData.workouts);
+      setMeals(initData.meals);
+    }
+    setDietGoal(initData.dietGoal);
+  }, [initData, allDataLoaded, setWorkouts, setMeals]);
 
   function openDietSettings() {
     setDraftGoal(dietGoal);
@@ -87,6 +93,7 @@ export default function Home() {
       await apiPost<DietGoal>("/api/diet-goal", draftGoal);
       setDietGoal(draftGoal);
       setDietSettingsOpen(false);
+      mutateInit();
     } finally {
       setSavingDietGoal(false);
     }
@@ -97,36 +104,35 @@ export default function Home() {
     setLifeLogs(data);
   }
 
-  useEffect(() => {
-    Promise.all([
-      apiGet<WorkoutEntry[]>("/api/workouts"),
-      apiGet<MealEntry[]>("/api/meals"),
-    ]).then(([workoutData, mealData]) => {
-      setWorkouts(workoutData);
-      setMeals(mealData);
-    }).finally(() => setLoading(false));
+  async function loadAllData() {
+    const data = await apiGet<InitData>("/api/init?since=");
+    setWorkouts(data.workouts);
+    setMeals(data.meals);
+    setAllDataLoaded(true);
+  }
 
-    if (FEATURES.LIFELOG) {
-      fetch("/api/daily-summary").then(async (res) => {
-        if (FEATURES.FITBIT_REAUTH && res.headers.get("x-fitbit-auth-error") === "1") {
-          appToast.error("Fitbit の再認証が必要です", {
-            description: "リフレッシュトークンが無効になっています",
-          });
-        }
-        const data = res.ok ? await (res.json() as Promise<LifeLogEntry[]>) : [];
-        setLifeLogs(data);
-        const today = data[0];
-        if (today && !today.moodSelect && new Date().getHours() >= 22) {
-          appToast.info("気分が未入力です", {
-            description: "ライフログから今日の気分を記録しましょう",
-            duration: 4000,
-          });
-        }
-      }).catch(() => {}).finally(() => setLifeLogLoading(false));
-    } else {
+  useEffect(() => {
+    if (!FEATURES.LIFELOG) {
       setLifeLogLoading(false);
+      return;
     }
-  }, [setWorkouts, setMeals]);
+    fetch("/api/daily-summary").then(async (res) => {
+      if (FEATURES.FITBIT_REAUTH && res.headers.get("x-fitbit-auth-error") === "1") {
+        appToast.error("Fitbit の再認証が必要です", {
+          description: "リフレッシュトークンが無効になっています",
+        });
+      }
+      const data = res.ok ? await (res.json() as Promise<LifeLogEntry[]>) : [];
+      setLifeLogs(data);
+      const today = data[0];
+      if (today && !today.moodSelect && new Date().getHours() >= 22) {
+        appToast.info("気分が未入力です", {
+          description: "ライフログから今日の気分を記録しましょう",
+          duration: 4000,
+        });
+      }
+    }).catch(() => {}).finally(() => setLifeLogLoading(false));
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -441,6 +447,8 @@ export default function Home() {
             workouts={workouts}
             loading={loading}
             paginate
+            hasFullHistory={allDataLoaded}
+            onLoadAll={loadAllData}
             onUpdate={updateWorkout}
             onDelete={removeWorkout}
           />

@@ -1,12 +1,22 @@
 import { NextResponse } from "next/server";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { listWorkouts, createWorkout } from "@/lib/notion";
-import { jstToday, shiftDateStr } from "@/lib/date-utils";
+import { jstToday, jstMonthsAgo, shiftDateStr } from "@/lib/date-utils";
 import { DEMO_WORKOUTS, generateDemoId } from "@/lib/demo-data";
 import { IS_DEMO } from "@/lib/api-utils";
 
-export async function GET() {
+const getCachedWorkouts = unstable_cache(
+  (since: string) => listWorkouts(since),
+  ["workouts"],
+  { revalidate: 60, tags: ["workouts"] },
+);
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const sinceParam = searchParams.get("since");
+  const since = sinceParam === null ? jstMonthsAgo(3) : (sinceParam || undefined);
+
   if (IS_DEMO) {
-    // DEMO_WORKOUTS の最新日付を「今日」に合わせてシフト
     const target = jstToday();
     const maxDate = DEMO_WORKOUTS.reduce((max, w) => {
       const d = w.created.split("T")[0];
@@ -23,7 +33,8 @@ export async function GET() {
     shifted.sort((a, b) => (a.created < b.created ? 1 : a.created > b.created ? -1 : 0));
     return NextResponse.json(shifted);
   }
-  const workouts = await listWorkouts();
+
+  const workouts = await getCachedWorkouts(since ?? "");
   return NextResponse.json(workouts);
 }
 
@@ -36,5 +47,6 @@ export async function POST(request: Request) {
     );
   }
   const workout = await createWorkout(data);
+  revalidateTag("workouts");
   return NextResponse.json(workout, { status: 201 });
 }

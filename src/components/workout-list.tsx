@@ -68,16 +68,19 @@ type Props = {
   workouts: WorkoutEntry[];
   loading: boolean;
   paginate?: boolean;
+  hasFullHistory?: boolean;
+  onLoadAll?: () => Promise<void>;
   onUpdate: (entry: WorkoutEntry) => void;
   onDelete: (id: string) => void;
 };
 
-export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onDelete }: Props) {
+export function WorkoutList({ workouts, loading, paginate = false, hasFullHistory = false, onLoadAll, onUpdate, onDelete }: Props) {
   const [page, setPage] = useState(1);
   const [editTarget, setEditTarget] = useState<WorkoutEntry | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<WorkoutEntry | null>(null);
   const [memoTarget, setMemoTarget] = useState<WorkoutEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [loadingAll, setLoadingAll] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -256,6 +259,26 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
           <p className="text-xs text-muted-foreground ml-auto">{displayed.length} 件</p>
         )}
       </div>
+
+      {filterDateFrom < defaultFilterFrom && !hasFullHistory && (
+        <div className="flex items-center justify-between rounded-md border px-3 py-2 text-xs text-muted-foreground">
+          <span>3ヶ月以前のデータは読み込まれていません</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            disabled={loadingAll}
+            onClick={async () => {
+              if (!onLoadAll) return;
+              setLoadingAll(true);
+              await onLoadAll();
+              setLoadingAll(false);
+            }}
+          >
+            {loadingAll ? "読み込み中..." : "全期間を読み込む"}
+          </Button>
+        </div>
+      )}
 
       {displayed.length === 0 ? (
         <div className="flex flex-col items-center justify-center pt-10 pb-12 text-muted-foreground border rounded-md">
