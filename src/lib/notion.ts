@@ -1,5 +1,5 @@
 import { Client } from "@notionhq/client";
-import type { WorkoutEntry, WorkoutFormData, MealEntry, LifeLogEntry } from "./types";
+import type { WorkoutEntry, WorkoutFormData, MealEntry, LifeLogEntry, DietGoal } from "./types";
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const WORKOUT_DB = process.env.NOTION_WORKOUT_DATABASE_ID!;
@@ -29,11 +29,19 @@ function pageToWorkout(page: any): WorkoutEntry {
 }
 
 export async function listWorkouts(): Promise<WorkoutEntry[]> {
-  const response = await notion.databases.query({
-    database_id: WORKOUT_DB,
-    sorts: [{ timestamp: "created_time", direction: "descending" }],
-  });
-  return response.results.map(pageToWorkout);
+  const results: WorkoutEntry[] = [];
+  let cursor: string | undefined;
+  do {
+    const response = await notion.databases.query({
+      database_id: WORKOUT_DB,
+      sorts: [{ timestamp: "created_time", direction: "descending" }],
+      page_size: 100,
+      ...(cursor ? { start_cursor: cursor } : {}),
+    });
+    results.push(...response.results.map(pageToWorkout));
+    cursor = response.has_more && response.next_cursor ? response.next_cursor : undefined;
+  } while (cursor);
+  return results;
 }
 
 export async function createWorkout(data: WorkoutFormData): Promise<WorkoutEntry> {
@@ -96,11 +104,19 @@ function pageToMeal(page: any): MealEntry {
 }
 
 export async function listMeals(): Promise<MealEntry[]> {
-  const response = await notion.databases.query({
-    database_id: FOOD_DB,
-    sorts: [{ property: "Date", direction: "descending" }],
-  });
-  return response.results.map(pageToMeal);
+  const results: MealEntry[] = [];
+  let cursor: string | undefined;
+  do {
+    const response = await notion.databases.query({
+      database_id: FOOD_DB,
+      sorts: [{ property: "Date", direction: "descending" }],
+      page_size: 100,
+      ...(cursor ? { start_cursor: cursor } : {}),
+    });
+    results.push(...response.results.map(pageToMeal));
+    cursor = response.has_more && response.next_cursor ? response.next_cursor : undefined;
+  } while (cursor);
+  return results;
 }
 
 export async function createMeal(data: Omit<MealEntry, "id">): Promise<MealEntry> {
@@ -249,6 +265,52 @@ export async function setFitbitTokens(accessToken: string, refreshToken: string)
   await Promise.all([
     upsert("FITBIT_ACCESS_TOKEN", accessToken),
     upsert("FITBIT_REFRESH_TOKEN", refreshToken),
+  ]);
+}
+
+export async function getDietGoal(): Promise<DietGoal> {
+  const response = await notion.databases.query({ database_id: CONFIG_DB });
+  const rows = response.results as any[];
+  const getValue = (key: string) =>
+    rows.find((r) => r.properties.Key?.title?.[0]?.plain_text === key)
+      ?.properties.Value?.rich_text?.[0]?.plain_text ?? "";
+
+  return {
+    type: (getValue("DIET_GOAL_TYPE") as "lose" | "gain") || "lose",
+    targetKg: parseFloat(getValue("DIET_GOAL_TARGET_KG")) || 3,
+    startDate: getValue("DIET_START_DATE"),
+    endDate: getValue("DIET_END_DATE"),
+  };
+}
+
+export async function setDietGoal(goal: DietGoal): Promise<void> {
+  const response = await notion.databases.query({ database_id: CONFIG_DB });
+  const rows = response.results as any[];
+
+  const upsert = async (key: string, value: string) => {
+    if (!value) return;
+    const existing = rows.find((r) => r.properties.Key?.title?.[0]?.plain_text === key);
+    if (existing) {
+      await notion.pages.update({
+        page_id: existing.id,
+        properties: { Value: { rich_text: [{ text: { content: value } }] } },
+      });
+    } else {
+      await notion.pages.create({
+        parent: { database_id: CONFIG_DB },
+        properties: {
+          Key: { title: [{ text: { content: key } }] },
+          Value: { rich_text: [{ text: { content: value } }] },
+        },
+      });
+    }
+  };
+
+  await Promise.all([
+    upsert("DIET_GOAL_TYPE", goal.type),
+    upsert("DIET_GOAL_TARGET_KG", String(goal.targetKg)),
+    upsert("DIET_START_DATE", goal.startDate),
+    upsert("DIET_END_DATE", goal.endDate),
   ]);
 }
 

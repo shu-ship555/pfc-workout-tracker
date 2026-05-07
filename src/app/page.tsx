@@ -27,13 +27,14 @@ import { PFCSummary } from "@/components/pfc-summary";
 import { LifeLogSummary } from "@/components/lifelog-summary";
 import { MealForm } from "@/components/meal-form";
 import { ActionButtons } from "@/components/action-buttons";
-import type { WorkoutEntry, WorkoutFormData, MealEntry, LifeLogEntry } from "@/lib/types";
+import { DietCalendar } from "@/components/diet-calendar";
+import type { WorkoutEntry, WorkoutFormData, MealEntry, LifeLogEntry, DietGoal } from "@/lib/types";
 import { DEMO_BANNER } from "@/lib/color-constants";
 import { Dumbbell, FlaskConical, Sun, Moon, Menu } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Skeleton } from "@/components/ui/skeleton";
-import { apiGet } from "@/lib/api-client";
+import { apiGet, apiPost } from "@/lib/api-client";
 import { useCrudList } from "@/hooks/use-crud-list";
+import { normalizeDate } from "@/lib/date-utils";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -54,10 +55,40 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [authSecret, setAuthSecret] = useState("");
-  const [listDisplay, setListDisplay] = useState<{ label: string; count: number } | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [pendingFormData, setPendingFormData] = useState<WorkoutFormData | null>(null);
   const [addedCount, setAddedCount] = useState(0);
+  const [dietGoal, setDietGoal] = useState<DietGoal>({ type: "lose", targetKg: 3, startDate: "", endDate: "" });
+  const [dietSettingsOpen, setDietSettingsOpen] = useState(false);
+  const [draftGoal, setDraftGoal] = useState<DietGoal>({ type: "lose", targetKg: 3, startDate: "", endDate: "" });
+  const [savingDietGoal, setSavingDietGoal] = useState(false);
+  const [dietCalendarVisible, setDietCalendarVisible] = useState(() => {
+    try { return localStorage.getItem("diet-calendar-visible") !== "false"; } catch { return true; }
+  });
+
+  useEffect(() => {
+    apiGet<DietGoal>("/api/diet-goal").then((g) => {
+      setDietGoal(g);
+      setDraftGoal(g);
+    }).catch(() => { });
+  }, []);
+
+  function openDietSettings() {
+    setDraftGoal(dietGoal);
+    setMenuOpen(false);
+    setDietSettingsOpen(true);
+  }
+
+  async function saveDietGoal() {
+    setSavingDietGoal(true);
+    try {
+      await apiPost<DietGoal>("/api/diet-goal", draftGoal);
+      setDietGoal(draftGoal);
+      setDietSettingsOpen(false);
+    } finally {
+      setSavingDietGoal(false);
+    }
+  }
 
   async function fetchLifeLogs() {
     const data = await apiGet<LifeLogEntry[]>("/api/lifelog");
@@ -91,6 +122,43 @@ export default function Home() {
       }
     }).finally(() => setLoading(false));
   }, [setWorkouts, setMeals]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!dietGoal.startDate || !dietGoal.endDate || !dietGoal.targetKg) return;
+
+    const jstNow = new Date(Date.now() + 9 * 3600_000);
+    if (jstNow.getUTCHours() < 20) return;
+
+    const todayStr = jstNow.toISOString().slice(0, 10);
+    const shownKey = `diet-goal-toast-${todayStr}`;
+    if (localStorage.getItem(shownKey)) return;
+
+    const todayIntake = meals
+      .filter((m) => normalizeDate(m.date) === todayStr)
+      .reduce((s, m) => s + m.kcal, 0);
+    const todayConsumed = lifeLogs.find((l) => normalizeDate(l.date) === todayStr)?.consumedKcal ?? null;
+    if (todayConsumed === null) return;
+
+    const totalDays = Math.max(1, Math.ceil(
+      (new Date(dietGoal.endDate + "T00:00:00Z").getTime() - new Date(dietGoal.startDate + "T00:00:00Z").getTime()) / 86400_000
+    ) + 1);
+    const dailyTargetKcal = Math.ceil((dietGoal.targetKg * 7500) / totalDays);
+    const balance = todayIntake - todayConsumed;
+
+    let shouldWarn = false;
+    if (dietGoal.type === "lose" && balance > -dailyTargetKcal) shouldWarn = true;
+    if (dietGoal.type === "gain" && balance < dailyTargetKcal) shouldWarn = true;
+
+    if (shouldWarn) {
+      const title = dietGoal.type === "lose" ? "消費カロリーが足りていません" : "摂取カロリーが足りていません";
+      const sign = dietGoal.type === "lose" ? "-" : "+";
+      appToast.warning(title, {
+        description: `今日の目標収支 ${sign}${dailyTargetKcal.toLocaleString()}kcal に達していません`,
+      });
+      localStorage.setItem(shownKey, "1");
+    }
+  }, [loading, meals, lifeLogs, dietGoal]);
 
   function handleAdd(entry: WorkoutEntry) {
     addWorkout(entry);
@@ -172,87 +240,181 @@ export default function Home() {
                 />
               </DialogContent>
             </Dialog>
-            {FEATURES.FITBIT_REAUTH && (
-              <>
-                <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-                  <SheetTrigger
-                    render={
-                      <Button size="icon" variant="ghost" className="h-10 w-10 sm:h-8 sm:w-8" aria-label="メニュー" />
-                    }
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger
+                render={
+                  <Button size="icon" variant="ghost" className="h-10 w-10 sm:h-8 sm:w-8" aria-label="メニュー" />
+                }
+              >
+                <Menu className="h-5 w-5 sm:h-4 sm:w-4" />
+              </SheetTrigger>
+              <SheetContent side="right">
+                <SheetHeader>
+                  <SheetTitle>メニュー</SheetTitle>
+                </SheetHeader>
+                <div className="px-4 space-y-2">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={openDietSettings}
                   >
-                    <Menu className="h-5 w-5 sm:h-4 sm:w-4" />
-                  </SheetTrigger>
-                  <SheetContent side="right">
-                    <SheetHeader>
-                      <SheetTitle>メニュー</SheetTitle>
-                    </SheetHeader>
-                    <div className="px-4 space-y-2">
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          setAuthOpen(true);
-                        }}
-                      >
-                        Fitbit 再認証
+                    ダイエット目標設定
+                  </Button>
+                  {FEATURES.FITBIT_REAUTH && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setAuthOpen(true);
+                      }}
+                    >
+                      Fitbit 再認証
+                    </Button>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+            {FEATURES.FITBIT_REAUTH && (
+              <Dialog open={authOpen} onOpenChange={setAuthOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Fitbit 再認証</DialogTitle>
+                  </DialogHeader>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const authWindow = window.open(
+                        `/api/fitbit/auth?secret=${encodeURIComponent(authSecret)}`,
+                        "_blank",
+                      );
+                      setAuthOpen(false);
+                      setAuthSecret("");
+                      if (authWindow) {
+                        const handleMessage = (event: MessageEvent) => {
+                          if (event.data?.type === "fitbit-auth-complete") {
+                            window.removeEventListener("message", handleMessage);
+                            location.reload();
+                          }
+                        };
+                        window.addEventListener("message", handleMessage);
+                      }
+                    }}
+                    className="space-y-4"
+                  >
+                    <div className="space-y-2">
+                      <Label htmlFor="fitbit-auth-secret">シークレット</Label>
+                      <Input
+                        id="fitbit-auth-secret"
+                        type="password"
+                        value={authSecret}
+                        onChange={(e) => setAuthSecret(e.target.value)}
+                        required
+                        autoFocus
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        FITBIT_AUTH_SECRET を入力してください
+                      </p>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={() => setAuthOpen(false)}>
+                        キャンセル
+                      </Button>
+                      <Button type="submit" disabled={!authSecret}>
+                        認証ページを開く
                       </Button>
                     </div>
-                  </SheetContent>
-                </Sheet>
-                <Dialog open={authOpen} onOpenChange={setAuthOpen}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Fitbit 再認証</DialogTitle>
-                    </DialogHeader>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        const authWindow = window.open(
-                          `/api/fitbit/auth?secret=${encodeURIComponent(authSecret)}`,
-                          "_blank",
-                        );
-                        setAuthOpen(false);
-                        setAuthSecret("");
-                        if (authWindow) {
-                          const handleMessage = (event: MessageEvent) => {
-                            if (event.data?.type === "fitbit-auth-complete") {
-                              window.removeEventListener("message", handleMessage);
-                              location.reload();
-                            }
-                          };
-                          window.addEventListener("message", handleMessage);
-                        }
-                      }}
-                      className="space-y-4"
-                    >
-                      <div className="space-y-2">
-                        <Label htmlFor="fitbit-auth-secret">シークレット</Label>
-                        <Input
-                          id="fitbit-auth-secret"
-                          type="password"
-                          value={authSecret}
-                          onChange={(e) => setAuthSecret(e.target.value)}
-                          required
-                          autoFocus
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          FITBIT_AUTH_SECRET を入力してください
-                        </p>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => setAuthOpen(false)}>
-                          キャンセル
-                        </Button>
-                        <Button type="submit" disabled={!authSecret}>
-                          認証ページを開く
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </>
+                  </form>
+                </DialogContent>
+              </Dialog>
             )}
+            <Dialog open={dietSettingsOpen} onOpenChange={setDietSettingsOpen}>
+              <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>ダイエット目標設定</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="diet-calendar-visible">カレンダーを表示</Label>
+                    <Switch
+                      id="diet-calendar-visible"
+                      checked={dietCalendarVisible}
+                      onCheckedChange={(v) => {
+                        setDietCalendarVisible(v);
+                        try { localStorage.setItem("diet-calendar-visible", String(v)); } catch { }
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>目標タイプ</Label>
+                    <div className="flex rounded-md border overflow-hidden">
+                      <Button
+                        type="button"
+                        variant={draftGoal.type === "lose" ? "default" : "ghost"}
+                        className="flex-1 rounded-none"
+                        onClick={() => setDraftGoal((g) => ({ ...g, type: "lose" }))}
+                      >
+                        減量
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={draftGoal.type === "gain" ? "default" : "ghost"}
+                        className="flex-1 rounded-none"
+                        onClick={() => setDraftGoal((g) => ({ ...g, type: "gain" }))}
+                      >
+                        増量
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="diet-target-kg">目標体重変化</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="diet-target-kg"
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={draftGoal.targetKg}
+                        onChange={(e) => setDraftGoal((g) => ({ ...g, targetKg: parseFloat(e.target.value) || 0 }))}
+                        className="w-28"
+                      />
+                      <span className="text-sm text-muted-foreground">kg</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      1kg = 7,500 kcal で計算します
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="diet-start-date">開始日</Label>
+                      <Input
+                        id="diet-start-date"
+                        type="date"
+                        value={draftGoal.startDate}
+                        onChange={(e) => setDraftGoal((g) => ({ ...g, startDate: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="diet-end-date">終了日</Label>
+                      <Input
+                        id="diet-end-date"
+                        type="date"
+                        value={draftGoal.endDate}
+                        onChange={(e) => setDraftGoal((g) => ({ ...g, endDate: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setDietSettingsOpen(false)}>
+                      キャンセル
+                    </Button>
+                    <Button onClick={saveDietGoal} disabled={savingDietGoal || draftGoal.targetKg <= 0}>
+                      {savingDietGoal ? "保存中…" : "保存"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </header>
@@ -260,7 +422,9 @@ export default function Home() {
       <ActionButtons onMealOpen={() => setMealOpen(true)} onWorkoutOpen={() => setOpen(true)} />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-5 pb-24 sm:pb-6 space-y-6">
-        <PFCSummary meals={meals} lifeLogs={lifeLogs} loading={loading} onMealDelete={removeMeal} onMealUpdate={updateMeal} />
+        <PFCSummary meals={meals} lifeLogs={lifeLogs} loading={loading} onMealDelete={removeMeal} onMealUpdate={updateMeal} dietGoal={dietGoal} />
+
+        {dietCalendarVisible && <DietCalendar meals={meals} lifeLogs={lifeLogs} goal={dietGoal} loading={loading} onSettingsOpen={openDietSettings} onMealAdd={addMeal} />}
 
         {FEATURES.LIFELOG && (
           <>
@@ -272,33 +436,15 @@ export default function Home() {
 
         <WorkoutChart workouts={workouts} />
 
-        <div className="flex items-center justify-between">
-          {loading ? (
-            <Skeleton className="h-4 w-16" />
-          ) : (
-            <h2 className="text-sm font-medium">筋トレ記録</h2>
-          )}
-          {loading ? (
-            <Skeleton className="h-4 w-36" />
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {listDisplay ? (
-                <>{listDisplay.label} <span className="text-foreground/40 mx-0.5">|</span> <span className="font-mono">{listDisplay.count}</span> / <span className="font-mono">{workouts.length}</span> 件</>
-              ) : (
-                <><span className="font-mono">{workouts.length}</span> 件</>
-              )}
-            </p>
-          )}
+        <div className="mt-4!">
+          <WorkoutList
+            workouts={workouts}
+            loading={loading}
+            paginate
+            onUpdate={updateWorkout}
+            onDelete={removeWorkout}
+          />
         </div>
-
-        <WorkoutList
-          workouts={workouts}
-          loading={loading}
-          paginate
-          onUpdate={updateWorkout}
-          onDelete={removeWorkout}
-          onDisplayChange={setListDisplay}
-        />
         <SpeedInsights />
       </main>
     </div>

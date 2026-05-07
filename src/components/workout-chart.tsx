@@ -13,6 +13,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
+import { TrendingUp } from "lucide-react";
 import type { WorkoutEntry } from "@/lib/types";
 import { EXERCISES, type Part } from "@/lib/exercises";
 import { ChartTooltip } from "@/components/chart-tooltip";
@@ -78,7 +79,7 @@ export function WorkoutChart({ workouts }: Props) {
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium whitespace-nowrap">重量の推移</p>
+            <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /><p className="text-sm font-medium whitespace-nowrap">重量の推移</p></div>
             {goalWeight > 0 && (
               <span className="text-xs text-muted-foreground whitespace-nowrap">目標 {goalWeight}kg</span>
             )}

@@ -54,3 +54,10 @@ export type MealEntry = {
   fat: number;
   carb: number;
 };
+
+export type DietGoal = {
+  type: "lose" | "gain";
+  targetKg: number;
+  startDate: string; // "YYYY-MM-DD"
+  endDate: string;   // "YYYY-MM-DD"
+};

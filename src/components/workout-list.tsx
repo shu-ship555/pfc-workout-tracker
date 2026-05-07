@@ -39,10 +39,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WorkoutForm } from "@/components/workout-form";
 import { PartSelect, ExerciseSelect } from "@/components/workout-selects";
 import type { WorkoutEntry } from "@/lib/types";
-import { jstToday, formatDateTime } from "@/lib/date-utils";
+import { jstToday, jstMonthsAgo, formatDateTime } from "@/lib/date-utils";
 import { FLAG_COLORS } from "@/lib/color-constants";
 import { apiDelete } from "@/lib/api-client";
-import { Pencil, Trash2, MessageSquare, X } from "lucide-react";
+import { Dumbbell, Pencil, Trash2, MessageSquare, X } from "lucide-react";
 
 const DAYS_PER_PAGE = 14; // 2週間
 
@@ -63,12 +63,6 @@ function calcTotalPages(workouts: WorkoutEntry[]): number {
   return Math.max(1, Math.ceil(diffDays / DAYS_PER_PAGE));
 }
 
-function formatWindowLabel(page: number): string {
-  const { from, to } = getPageWindow(page);
-  const fmt = (d: Date) =>
-    d.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
-  return `${fmt(from)} 〜 ${fmt(to)}`;
-}
 
 type Props = {
   workouts: WorkoutEntry[];
@@ -76,10 +70,9 @@ type Props = {
   paginate?: boolean;
   onUpdate: (entry: WorkoutEntry) => void;
   onDelete: (id: string) => void;
-  onDisplayChange?: (info: { label: string; count: number }) => void;
 };
 
-export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onDelete, onDisplayChange }: Props) {
+export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onDelete }: Props) {
   const [page, setPage] = useState(1);
   const [editTarget, setEditTarget] = useState<WorkoutEntry | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<WorkoutEntry | null>(null);
@@ -95,17 +88,17 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
   }, []);
 
   const todayStr = jstToday();
+  const defaultFilterFrom = jstMonthsAgo(3);
 
-  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState(defaultFilterFrom);
   const [filterDateTo, setFilterDateTo] = useState(todayStr);
   const [filterParts, setFilterParts] = useState("");
   const [filterExercise, setFilterExercise] = useState("");
 
-  // filterDateTo がデフォルト（今日）のままならフィルター判定に含めない
-  const isFiltered = !!(filterDateFrom || filterParts || filterExercise || filterDateTo !== todayStr);
+  const isFiltered = !!(filterDateFrom !== defaultFilterFrom || filterParts || filterExercise || filterDateTo !== todayStr);
 
   function resetFilters() {
-    setFilterDateFrom("");
+    setFilterDateFrom(defaultFilterFrom);
     setFilterDateTo(todayStr);
     setFilterParts("");
     setFilterExercise("");
@@ -116,23 +109,21 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
     setFilterExercise("");
   }
 
-  const baseWorkouts = isFiltered
-    ? workouts.filter((w) => {
-      const date = w.created.slice(0, 10);
-      if (filterDateFrom && date < filterDateFrom) return false;
-      if (filterDateTo && date > filterDateTo) return false;
-      if (filterParts && w.parts !== filterParts) return false;
-      if (filterExercise && w.exercise !== filterExercise) return false;
-      return true;
-    })
-    : workouts;
+  const baseWorkouts = workouts.filter((w) => {
+    const date = w.created.slice(0, 10);
+    if (filterDateFrom && date < filterDateFrom) return false;
+    if (filterDateTo && date > filterDateTo) return false;
+    if (filterParts && w.parts !== filterParts) return false;
+    if (filterExercise && w.exercise !== filterExercise) return false;
+    return true;
+  });
 
-  const totalPages = paginate && !isFiltered ? calcTotalPages(workouts) : 1;
+  const totalPages = paginate && !isFiltered ? calcTotalPages(baseWorkouts) : 1;
 
   const displayed = paginate && !isFiltered
     ? (() => {
       const { from, to } = getPageWindow(page);
-      return workouts.filter((w) => {
+      return baseWorkouts.filter((w) => {
         const d = new Date(w.created);
         return d >= from && d < to;
       });
@@ -148,11 +139,6 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
     return () => ro.disconnect();
   }, [displayed.length, checkScroll]);
 
-  useEffect(() => {
-    const label = isFiltered ? "フィルター中" : formatWindowLabel(page);
-    onDisplayChange?.({ label, count: displayed.length });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayed.length, page, isFiltered]);
 
   async function confirmDelete() {
     if (!deleteTarget) return;
@@ -163,61 +149,79 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
     setDeleting(false);
   }
 
-  function PageNav() {
-    return (
-      <div className="flex items-center justify-end">
-        <Pagination className="w-auto mx-0">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                text="新しい期間"
-                href="#"
-                onClick={(e) => { e.preventDefault(); setPage((p) => Math.max(1, p - 1)); }}
-                aria-disabled={page === 1}
-                className={page === 1 ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-            <PaginationItem>
-              <span className="text-xs px-2 text-muted-foreground tabular-nums">
-                {page} / {totalPages}
-              </span>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext
-                text="古い期間"
-                href="#"
-                onClick={(e) => { e.preventDefault(); setPage((p) => Math.min(totalPages, p + 1)); }}
-                aria-disabled={page === totalPages}
-                className={page === totalPages ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      </div>
-    );
-  }
+  const pageNav = (
+    <div className="flex items-center justify-end">
+      <Pagination className="w-auto mx-0">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              text="新しい期間"
+              href="#"
+              onClick={(e) => { e.preventDefault(); setPage((p) => Math.max(1, p - 1)); }}
+              aria-disabled={page === 1}
+              className={page === 1 ? "pointer-events-none opacity-50" : ""}
+            />
+          </PaginationItem>
+          <PaginationItem>
+            <span className="text-xs px-2 text-muted-foreground tabular-nums">
+              {page} / {totalPages}
+            </span>
+          </PaginationItem>
+          <PaginationItem>
+            <PaginationNext
+              text="古い期間"
+              href="#"
+              onClick={(e) => { e.preventDefault(); setPage((p) => Math.min(totalPages, p + 1)); }}
+              aria-disabled={page === totalPages}
+              className={page === totalPages ? "pointer-events-none opacity-50" : ""}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    </div>
+  );
+
+  const header = (
+    <div className="flex items-center justify-between">
+      {loading ? (
+        <Skeleton className="h-4 w-16" />
+      ) : (
+        <div className="flex items-center gap-2">
+          <Dumbbell className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-medium">筋トレ記録</h2>
+        </div>
+      )}
+    </div>
+  );
 
   if (loading) {
     return (
-      <div className="space-y-2">
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-10 w-full" />
-        ))}
+      <div className="space-y-4">
+        {header}
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (workouts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center pt-10 pb-12 text-muted-foreground">
-        <p className="text-sm">記録がありません</p>
-        <p className="text-xs mt-1">「記録を追加」から最初のトレーニングを登録しましょう</p>
+      <div className="space-y-4">
+        {header}
+        <div className="flex flex-col items-center justify-center pt-10 pb-12 text-muted-foreground">
+          <p className="text-sm">記録がありません</p>
+          <p className="text-xs mt-1">「記録を追加」から最初のトレーニングを登録しましょう</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <>
+    <div className="space-y-4">
+      {header}
       {/* フィルターパネル */}
       <div className="flex flex-wrap items-end gap-2 mb-3">
         <DateRangeInput
@@ -350,7 +354,7 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
         </div>
       )}
 
-      {paginate && !isFiltered && <PageNav />}
+      {paginate && !isFiltered && pageNav}
 
       <Dialog open={!!editTarget} onOpenChange={(o) => !o && setEditTarget(null)}>
         <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-lg">
@@ -401,6 +405,6 @@ export function WorkoutList({ workouts, loading, paginate = false, onUpdate, onD
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

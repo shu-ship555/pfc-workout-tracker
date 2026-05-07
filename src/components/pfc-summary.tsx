@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PFCInputGrid } from "@/components/pfc-input-grid";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, Trash2, ChevronDown, ChevronUp, Pencil, Check, X } from "lucide-react";
-import type { MealEntry, LifeLogEntry, MealLike } from "@/lib/types";
+import { AlertTriangle, Utensils, Trash2, ChevronDown, ChevronUp, Pencil, Check, X } from "lucide-react";
+import type { MealEntry, LifeLogEntry, MealLike, DietGoal } from "@/lib/types";
 import { PFC_COLORS, STATUS_COLORS } from "@/lib/color-constants";
 import { jstDaysAgo, normalizeDate } from "@/lib/date-utils";
 import { PFCSkeletonGrid } from "@/components/pfc-skeleton-grid";
@@ -16,18 +16,18 @@ import { apiPatch, apiDelete } from "@/lib/api-client";
 type Period = "today" | "yesterday" | "3days" | "7days";
 
 const PERIODS: { value: Period; label: string }[] = [
-  { value: "today",     label: "今日" },
+  { value: "today", label: "今日" },
   { value: "yesterday", label: "前日" },
-  { value: "3days",     label: "過去3日" },
-  { value: "7days",     label: "過去1週間" },
+  { value: "3days", label: "過去3日" },
+  { value: "7days", label: "過去1週間" },
 ];
 
 function getPeriodDates(period: Period): string[] {
   switch (period) {
-    case "today":     return [jstDaysAgo(0)];
+    case "today": return [jstDaysAgo(0)];
     case "yesterday": return [jstDaysAgo(1)];
-    case "3days":     return [jstDaysAgo(1), jstDaysAgo(2), jstDaysAgo(3)];
-    case "7days":     return Array.from({ length: 7 }, (_, i) => jstDaysAgo(i + 1));
+    case "3days": return [jstDaysAgo(1), jstDaysAgo(2), jstDaysAgo(3)];
+    case "7days": return Array.from({ length: 7 }, (_, i) => jstDaysAgo(i + 1));
   }
 }
 
@@ -51,9 +51,10 @@ type Props = {
   loading?: boolean;
   onMealDelete?: (id: string) => void;
   onMealUpdate?: (meal: MealEntry) => void;
+  dietGoal?: DietGoal;
 };
 
-export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdate }: Props) {
+export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdate, dietGoal }: Props) {
   const [period, setPeriod] = useState<Period>("today");
   const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
   const [showList, setShowList] = useState(false);
@@ -115,6 +116,28 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
     }
   }
 
+  const dietDailyTarget = useMemo((): { kcal: number; type: "lose" | "gain" } | null => {
+    if (!dietGoal?.startDate || !dietGoal?.endDate || !dietGoal?.targetKg) return null;
+    const todayStr = jstDaysAgo(0);
+    const targetKcal = dietGoal.targetKg * 7500;
+    const mealMap: Record<string, number> = {};
+    for (const m of meals) { const d = normalizeDate(m.date); mealMap[d] = (mealMap[d] ?? 0) + m.kcal; }
+    const consumedMap: Record<string, number | null> = {};
+    for (const l of lifeLogs) { consumedMap[normalizeDate(l.date)] = l.consumedKcal; }
+    let cumulative = 0;
+    for (const d of new Set([...Object.keys(mealMap), ...Object.keys(consumedMap)])) {
+      if (d > todayStr || d < dietGoal.startDate || d > dietGoal.endDate) continue;
+      const i = mealMap[d] ?? null;
+      const c = consumedMap[d] ?? null;
+      if (i !== null && c !== null) cumulative += i - c;
+    }
+    const progressKcal = dietGoal.type === "lose" ? -cumulative : cumulative;
+    const remaining = targetKcal - progressKcal;
+    const remainingDays = Math.ceil((new Date(dietGoal.endDate + "T00:00:00Z").getTime() - new Date(todayStr + "T00:00:00Z").getTime()) / 86400_000) + 1;
+    if (remainingDays <= 0 || remaining <= 0) return null;
+    return { kcal: Math.ceil(remaining / remainingDays), type: dietGoal.type };
+  }, [dietGoal, meals, lifeLogs]);
+
   if (loading) {
     return (
       <Card>
@@ -131,21 +154,25 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
 
   const filtered = filterMeals(meals, period);
   const protein = filtered.reduce((s, m) => s + m.protein, 0);
-  const fat     = filtered.reduce((s, m) => s + m.fat, 0);
-  const carb    = filtered.reduce((s, m) => s + m.carb, 0);
-  const kcal    = filtered.reduce((s, m) => s + m.kcal, 0);
+  const fat = filtered.reduce((s, m) => s + m.fat, 0);
+  const carb = filtered.reduce((s, m) => s + m.carb, 0);
+  const kcal = filtered.reduce((s, m) => s + m.kcal, 0);
   const consumed = filterConsumedKcal(lifeLogs, period);
 
   const items = [
-    { label: "P タンパク質", value: protein, unit: "g",    color: PFC_COLORS.protein },
-    { label: "F 脂質",       value: fat,     unit: "g",    color: PFC_COLORS.fat },
-    { label: "C 炭水化物",   value: carb,    unit: "g",    color: PFC_COLORS.carb },
-    { label: "カロリー",     value: kcal,    unit: "kcal", color: PFC_COLORS.kcal },
+    { label: "P タンパク質", value: protein, unit: "g", color: PFC_COLORS.protein },
+    { label: "F 脂質", value: fat, unit: "g", color: PFC_COLORS.fat },
+    { label: "C 炭水化物", value: carb, unit: "g", color: PFC_COLORS.carb },
+    { label: "カロリー", value: kcal, unit: "kcal", color: PFC_COLORS.kcal },
   ];
 
   return (
     <Card>
       <CardHeader className="pb-2">
+        <div className="flex items-center gap-2 mb-2">
+          <Utensils className="h-4 w-4 text-primary" />
+          <p className="text-sm font-medium">食事記録</p>
+        </div>
         <div className="inline-flex h-8 items-center rounded-md bg-muted p-0.5 gap-0.5">
           {PERIODS.map((p) => (
             <button
@@ -168,22 +195,27 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {items.map((item) => (
             <div key={item.label} className={`rounded-lg px-3 pt-1.5 pb-2 ${item.color}`}>
-              <p className="text-xs font-medium opacity-70 whitespace-nowrap">{item.label}</p>
+              <div className="flex items-center justify-between gap-1">
+                <p className="text-xs font-medium opacity-70 whitespace-nowrap">{item.label}</p>
+                {item.unit === "kcal" && consumed != null && (() => {
+                  const threshold = dietDailyTarget
+                    ? (dietDailyTarget.type === "lose" ? consumed - dietDailyTarget.kcal : consumed + dietDailyTarget.kcal)
+                    : consumed;
+                  return item.value > threshold;
+                })() && (
+                  <span className={`flex items-center gap-0.5 text-[10px] whitespace-nowrap leading-tight ${STATUS_COLORS.alert}`}>
+                    <AlertTriangle className="h-2.5 w-2.5" />
+                    摂取超過
+                  </span>
+                )}
+              </div>
               {item.unit === "kcal" && consumed != null ? (
-                <>
-                  <p className="text-xl font-bold font-mono leading-tight mt-0.5">
-                    {item.value.toFixed(0)}
-                    <span className="text-xs font-normal mx-0.5">/</span>
-                    <span className="text-xs sm:text-sm">{consumed.toFixed(0)}</span>
-                    <span className="text-xs font-normal ml-0.5">kcal</span>
-                  </p>
-                  {item.value > consumed && (
-                    <div className={`flex items-center gap-0.5 mt-0.5 ${STATUS_COLORS.alert}`}>
-                      <AlertTriangle className="h-3 w-3" />
-                      <span className="text-xs whitespace-nowrap">摂取超過</span>
-                    </div>
-                  )}
-                </>
+                <p className="text-xl font-bold font-mono leading-tight mt-0.5">
+                  {item.value.toFixed(0)}
+                  <span className="text-xs font-normal mx-0.5">/</span>
+                  <span className="text-xs sm:text-sm">{consumed.toFixed(0)}</span>
+                  <span className="text-xs font-normal ml-0.5">kcal</span>
+                </p>
               ) : (
                 <p className="text-xl font-bold font-mono">
                   {item.value.toFixed(item.unit === "kcal" ? 0 : 1)}

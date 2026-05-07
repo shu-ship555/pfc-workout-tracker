@@ -23,7 +23,10 @@ export async function POST(req: Request) {
     if (IS_DEMO) {
       return NextResponse.json({ id: generateDemoId(), date: jstToday(), ...fields });
     }
-    const meal = await createMeal({ date: jstToday(), ...fields });
+    const date = typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date)
+      ? body.date
+      : jstToday();
+    const meal = await createMeal({ date, ...fields });
     return NextResponse.json(meal);
   } catch (e) {
     return apiError(e);

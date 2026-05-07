@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Activity } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -137,7 +138,7 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <p className="text-sm font-medium">ライフログ</p>
+          <div className="flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /><p className="text-sm font-medium">ライフログ</p></div>
         </CardHeader>
         <CardContent>
           <p className="text-xs text-muted-foreground">データを取得できませんでした</p>
@@ -150,7 +151,7 @@ export function LifeLogSummary({ logs, loading, onRefresh }: Props) {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">ライフログ</p>
+          <div className="flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /><p className="text-sm font-medium">ライフログ</p></div>
           <span className="text-xs text-muted-foreground">{latest.date}</span>
         </div>
       </CardHeader>
