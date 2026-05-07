@@ -8,11 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, Calendar, Settings } from "lucide-react";
 import type { MealEntry, LifeLogEntry, DietGoal } from "@/lib/types";
+import { KCAL_PER_KG } from "@/lib/types";
 import { apiPost } from "@/lib/api-client";
 import { PFC_COLORS } from "@/lib/color-constants";
 import { normalizeDate, jstToday } from "@/lib/date-utils";
+import { calcDietProgress } from "@/lib/diet";
 
-const KCAL_PER_KG = 7500;
 const DOW_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 
 type DayBalance = {
@@ -70,23 +71,10 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
     }
   }
 
-  const mealsByDate = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const meal of meals) {
-      const d = normalizeDate(meal.date).slice(0, 10);
-      map[d] = (map[d] ?? 0) + meal.kcal;
-    }
-    return map;
-  }, [meals]);
-
-  const consumedByDate = useMemo(() => {
-    const map: Record<string, number | null> = {};
-    for (const log of lifeLogs) {
-      const d = normalizeDate(log.date).slice(0, 10);
-      map[d] = log.consumedKcal;
-    }
-    return map;
-  }, [lifeLogs]);
+  const { mealsByDate, consumedByDate, cumulative, daysWithData, progressKcal, targetKcal, dailyTarget } = useMemo(
+    () => calcDietProgress(goal, meals, lifeLogs, todayStr),
+    [goal, meals, lifeLogs, todayStr],
+  );
 
   function getDayBalance(dateStr: string): DayBalance {
     const intake = mealsByDate[dateStr] ?? null;
@@ -95,28 +83,9 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
     return { intake, consumed, balance };
   }
 
-  const stats = useMemo(() => {
-    let cumulative = 0;
-    let daysWithData = 0;
-
-    const allDates = new Set([...Object.keys(mealsByDate), ...Object.keys(consumedByDate)]);
-    for (const d of allDates) {
-      if (d > todayStr) continue;
-      if (goal.startDate && d < goal.startDate) continue;
-      if (goal.endDate && d > goal.endDate) continue;
-      const { balance } = getDayBalance(d);
-      if (balance !== null) {
-        cumulative += balance;
-        daysWithData++;
-      }
-    }
-
+  const { weightChange, progress, estimatedLabel } = useMemo(() => {
     const weightChange = cumulative / KCAL_PER_KG;
-    // balance = intake - consumed なので、減量は cumulative < 0 が進捗
-    const progressKcal = goal.type === "lose" ? -cumulative : cumulative;
-    const targetKcal = goal.targetKg * KCAL_PER_KG;
     const progress = Math.min(100, Math.max(0, (progressKcal / targetKcal) * 100));
-
     let estimatedLabel: string | null = null;
     if (daysWithData > 0) {
       const avgDaily = cumulative / daysWithData;
@@ -130,21 +99,8 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
         estimatedLabel = `${est.getUTCMonth() + 1}/${est.getUTCDate()} 達成予定`;
       }
     }
-
-    let dailyTarget: number | null = null;
-    if (goal.startDate && goal.endDate && goal.targetKg > 0) {
-      const end = new Date(goal.endDate + "T00:00:00Z");
-      const today = new Date(todayStr + "T00:00:00Z");
-      const remainingDays = Math.ceil((end.getTime() - today.getTime()) / 86400_000) + 1;
-      const remaining = targetKcal - progressKcal;
-      if (remainingDays > 0 && remaining > 0) {
-        dailyTarget = Math.ceil(remaining / remainingDays);
-      }
-    }
-
-    return { cumulative, weightChange, progress, estimatedLabel, dailyTarget };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mealsByDate, consumedByDate, goal, todayStr]);
+    return { weightChange, progress, estimatedLabel };
+  }, [cumulative, daysWithData, progressKcal, targetKcal, goal.type]);
 
   const calendarDays = useMemo(() => {
     const firstDow = new Date(Date.UTC(viewYear, viewMonth, 1)).getUTCDay();
@@ -193,8 +149,6 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
       ? (strong ? "bg-green-500/20 text-green-700 dark:text-green-400" : "bg-green-500/10 text-green-600 dark:text-green-500")
       : (strong ? "bg-red-500/20 text-red-700 dark:text-red-400" : "bg-red-500/10 text-red-600 dark:text-red-500");
   }
-
-  const { cumulative, weightChange, progress, estimatedLabel, dailyTarget } = stats;
 
   if (loading) {
     return (

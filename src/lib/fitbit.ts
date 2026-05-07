@@ -1,4 +1,5 @@
 import { getFitbitTokens, setFitbitTokens } from "./notion";
+import { jstToday, jstDaysAgo } from "./date-utils";
 
 /** Fitbit の refresh_token が無効化された（invalid_grant）ことを示すエラー */
 export class FitbitAuthError extends Error {
@@ -120,17 +121,17 @@ async function fitbitGet(path: string): Promise<unknown> {
 /** 今日のFitbitデータ（活動・睡眠）を取得する */
 export async function fetchTodayFitbit() {
   // Fitbit API は "today" エイリアスを受け付けないため、JST の実日付を使用
-  const jstToday = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
+  const todayStr = jstToday();
 
   const [activitiesData, sleepData, weightData] = await Promise.all([
-    fitbitGet(`/1/user/-/activities/date/${jstToday}.json`) as Promise<{
+    fitbitGet(`/1/user/-/activities/date/${todayStr}.json`) as Promise<{
       summary?: { steps?: number; caloriesOut?: number };
     }>,
-    fitbitGet(`/1.2/user/-/sleep/date/${jstToday}.json`) as Promise<{
+    fitbitGet(`/1.2/user/-/sleep/date/${todayStr}.json`) as Promise<{
       sleep?: { isMainSleep?: boolean; startTime?: string; endTime?: string }[];
       summary?: { totalMinutesAsleep?: number };
     }>,
-    fitbitGet(`/1/user/-/body/log/weight/date/${jstToday}.json`) as Promise<{
+    fitbitGet(`/1/user/-/body/log/weight/date/${todayStr}.json`) as Promise<{
       body?: { weight?: number }[];
     }>,
   ]);
@@ -151,8 +152,8 @@ export async function fetchTodayFitbit() {
   // 今日の体重がなければ過去30日の直近データを使用
   let weight: number | null = weightData.body?.[0]?.weight ?? null;
   if (weight === null) {
-    const jstStart = new Date(Date.now() + 9 * 3600_000 - 30 * 86400_000).toISOString().slice(0, 10);
-    const rangeData = await fitbitGet(`/1/user/-/body/log/weight/date/${jstStart}/${jstToday}.json`) as {
+    const jstStart = jstDaysAgo(30);
+    const rangeData = await fitbitGet(`/1/user/-/body/log/weight/date/${jstStart}/${todayStr}.json`) as {
       weight?: { weight?: number }[];
     };
     const logs = rangeData.weight ?? [];

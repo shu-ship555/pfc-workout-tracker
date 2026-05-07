@@ -55,6 +55,12 @@ export async function apiDelete(url: string): Promise<void> {
   await throwIfNotOk(res);
 }
 
+export async function apiDeleteJson<T>(url: string): Promise<T> {
+  const res = await fetch(url, { method: "DELETE" });
+  await throwIfNotOk(res);
+  return res.json();
+}
+
 /** エラーオブジェクトから安全にメッセージを取得する */
 export function getErrorMessage(e: unknown, fallback = "エラーが発生しました"): string {
   return e instanceof Error ? e.message : fallback;

@@ -61,3 +61,5 @@ export type DietGoal = {
   startDate: string; // "YYYY-MM-DD"
   endDate: string;   // "YYYY-MM-DD"
 };
+
+export const KCAL_PER_KG = 7500;

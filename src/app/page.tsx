@@ -33,6 +33,7 @@ import { DEMO_BANNER } from "@/lib/color-constants";
 import { Dumbbell, FlaskConical, Sun, Moon, Menu } from "lucide-react";
 import { useTheme } from "next-themes";
 import { apiGet, apiPost } from "@/lib/api-client";
+import { calcDietProgress } from "@/lib/diet";
 import { useCrudList } from "@/hooks/use-crud-list";
 import { normalizeDate } from "@/lib/date-utils";
 import { SpeedInsights } from "@vercel/speed-insights/next"
@@ -140,21 +141,19 @@ export default function Home() {
     const todayConsumed = lifeLogs.find((l) => normalizeDate(l.date) === todayStr)?.consumedKcal ?? null;
     if (todayConsumed === null) return;
 
-    const totalDays = Math.max(1, Math.ceil(
-      (new Date(dietGoal.endDate + "T00:00:00Z").getTime() - new Date(dietGoal.startDate + "T00:00:00Z").getTime()) / 86400_000
-    ) + 1);
-    const dailyTargetKcal = Math.ceil((dietGoal.targetKg * 7500) / totalDays);
+    const { dailyTarget } = calcDietProgress(dietGoal, meals, lifeLogs, todayStr);
+    if (dailyTarget === null) return;
     const balance = todayIntake - todayConsumed;
 
     let shouldWarn = false;
-    if (dietGoal.type === "lose" && balance > -dailyTargetKcal) shouldWarn = true;
-    if (dietGoal.type === "gain" && balance < dailyTargetKcal) shouldWarn = true;
+    if (dietGoal.type === "lose" && balance > -dailyTarget) shouldWarn = true;
+    if (dietGoal.type === "gain" && balance < dailyTarget) shouldWarn = true;
 
     if (shouldWarn) {
       const title = dietGoal.type === "lose" ? "消費カロリーが足りていません" : "摂取カロリーが足りていません";
       const sign = dietGoal.type === "lose" ? "-" : "+";
       appToast.warning(title, {
-        description: `今日の目標収支 ${sign}${dailyTargetKcal.toLocaleString()}kcal に達していません`,
+        description: `今日の目標収支 ${sign}${dailyTarget.toLocaleString()}kcal に達していません`,
       });
       localStorage.setItem(shownKey, "1");
     }

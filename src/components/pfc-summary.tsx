@@ -9,9 +9,10 @@ import { cn } from "@/lib/utils";
 import { AlertTriangle, Utensils, Trash2, ChevronDown, ChevronUp, Pencil, Check, X } from "lucide-react";
 import type { MealEntry, LifeLogEntry, MealLike, DietGoal } from "@/lib/types";
 import { PFC_COLORS, STATUS_COLORS } from "@/lib/color-constants";
-import { jstDaysAgo, normalizeDate } from "@/lib/date-utils";
+import { jstDaysAgo, jstToday, normalizeDate } from "@/lib/date-utils";
 import { PFCSkeletonGrid } from "@/components/pfc-skeleton-grid";
-import { apiPatch, apiDelete } from "@/lib/api-client";
+import { apiPatch, apiDelete, apiDeleteJson, getErrorMessage } from "@/lib/api-client";
+import { calcDietProgress } from "@/lib/diet";
 
 type Period = "today" | "yesterday" | "3days" | "7days";
 
@@ -65,16 +66,11 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
 
   async function handleDeleteLatest() {
     try {
-      const res = await fetch("/api/meals/latest", { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) {
-        setDeleteMsg(`⚠ ${data.error ?? "削除に失敗しました"}`);
-      } else {
-        setDeleteMsg(`削除しました: ${data.name}`);
-        onMealDelete?.(data.id);
-      }
-    } catch {
-      setDeleteMsg("削除に失敗しました");
+      const data = await apiDeleteJson<{ id: string; name: string }>("/api/meals/latest");
+      setDeleteMsg(`削除しました: ${data.name}`);
+      onMealDelete?.(data.id);
+    } catch (e) {
+      setDeleteMsg(`⚠ ${getErrorMessage(e, "削除に失敗しました")}`);
     }
     setTimeout(() => setDeleteMsg(null), 3000);
   }
@@ -118,24 +114,9 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
 
   const dietDailyTarget = useMemo((): { kcal: number; type: "lose" | "gain" } | null => {
     if (!dietGoal?.startDate || !dietGoal?.endDate || !dietGoal?.targetKg) return null;
-    const todayStr = jstDaysAgo(0);
-    const targetKcal = dietGoal.targetKg * 7500;
-    const mealMap: Record<string, number> = {};
-    for (const m of meals) { const d = normalizeDate(m.date); mealMap[d] = (mealMap[d] ?? 0) + m.kcal; }
-    const consumedMap: Record<string, number | null> = {};
-    for (const l of lifeLogs) { consumedMap[normalizeDate(l.date)] = l.consumedKcal; }
-    let cumulative = 0;
-    for (const d of new Set([...Object.keys(mealMap), ...Object.keys(consumedMap)])) {
-      if (d > todayStr || d < dietGoal.startDate || d > dietGoal.endDate) continue;
-      const i = mealMap[d] ?? null;
-      const c = consumedMap[d] ?? null;
-      if (i !== null && c !== null) cumulative += i - c;
-    }
-    const progressKcal = dietGoal.type === "lose" ? -cumulative : cumulative;
-    const remaining = targetKcal - progressKcal;
-    const remainingDays = Math.ceil((new Date(dietGoal.endDate + "T00:00:00Z").getTime() - new Date(todayStr + "T00:00:00Z").getTime()) / 86400_000) + 1;
-    if (remainingDays <= 0 || remaining <= 0) return null;
-    return { kcal: Math.ceil(remaining / remainingDays), type: dietGoal.type };
+    const { dailyTarget } = calcDietProgress(dietGoal, meals, lifeLogs, jstToday());
+    if (dailyTarget === null) return null;
+    return { kcal: dailyTarget, type: dietGoal.type };
   }, [dietGoal, meals, lifeLogs]);
 
   if (loading) {
