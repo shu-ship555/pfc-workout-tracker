@@ -9,12 +9,10 @@ import { cn } from "@/lib/utils";
 import { AlertTriangle, Utensils, Trash2, ChevronDown, ChevronUp, Pencil, Check, X } from "lucide-react";
 import type { MealEntry, LifeLogEntry, MealLike, DietGoal } from "@/lib/types";
 import { PFC_COLORS, STATUS_COLORS } from "@/lib/color-constants";
-import { jstDaysAgo, jstToday, normalizeDate } from "@/lib/date-utils";
+import { jstToday } from "@/lib/date-utils";
 import { PFCSkeletonGrid } from "@/components/pfc-skeleton-grid";
 import { apiPatch, apiDelete, apiDeleteJson, getErrorMessage } from "@/lib/api-client";
-import { calcDietProgress } from "@/lib/diet";
-
-type Period = "today" | "yesterday" | "3days" | "7days";
+import { calcDietProgress, filterMeals, filterConsumedKcal, type Period } from "@/lib/diet";
 
 const PERIODS: { value: Period; label: string }[] = [
   { value: "today", label: "今日" },
@@ -23,26 +21,6 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: "7days", label: "過去1週間" },
 ];
 
-function getPeriodDates(period: Period): string[] {
-  switch (period) {
-    case "today": return [jstDaysAgo(0)];
-    case "yesterday": return [jstDaysAgo(1)];
-    case "3days": return [jstDaysAgo(1), jstDaysAgo(2), jstDaysAgo(3)];
-    case "7days": return Array.from({ length: 7 }, (_, i) => jstDaysAgo(i + 1));
-  }
-}
-
-function filterMeals(meals: MealEntry[], period: Period): MealEntry[] {
-  const dates = new Set(getPeriodDates(period));
-  return meals.filter((m) => dates.has(m.date));
-}
-
-function filterConsumedKcal(logs: LifeLogEntry[], period: Period): number | null {
-  const dates = new Set(getPeriodDates(period));
-  const matched = logs.filter((l) => dates.has(normalizeDate(l.date)) && l.consumedKcal != null);
-  if (matched.length === 0) return null;
-  return matched.reduce((s, l) => s + (l.consumedKcal ?? 0), 0);
-}
 
 type EditData = MealLike;
 

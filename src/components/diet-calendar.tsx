@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import { KCAL_PER_KG } from "@/lib/types";
 import { apiPost } from "@/lib/api-client";
 import { PFC_COLORS } from "@/lib/color-constants";
 import { normalizeDate, jstToday, jstNow } from "@/lib/date-utils";
-import { calcDietProgress } from "@/lib/diet";
+import { calcDietProgress, formatBalance } from "@/lib/diet";
 
 const DOW_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -31,12 +32,6 @@ type Props = {
   onMealAdd?: (meal: MealEntry) => void;
 };
 
-function formatBalance(kcal: number): string {
-  const sign = kcal >= 0 ? "+" : "-";
-  const abs = Math.abs(kcal);
-  return abs >= 1000 ? `${sign}${(abs / 1000).toFixed(1)}k` : `${sign}${Math.round(abs)}`;
-}
-
 export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, onMealAdd }: Props) {
   const todayStr = jstToday();
   const [viewYear, setViewYear] = useState(() => parseInt(todayStr.slice(0, 4)));
@@ -44,7 +39,7 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [addName, setAddName] = useState("");
   const [addKcal, setAddKcal] = useState("");
-  const [addSubmitting, setAddSubmitting] = useState(false);
+  const { isPending: addSubmitting, run } = useAsyncAction();
 
   useEffect(() => {
     setAddName("");
@@ -53,8 +48,7 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
 
   async function handleAdd() {
     if (!selectedDate || !addKcal) return;
-    setAddSubmitting(true);
-    try {
+    await run(async () => {
       const meal = await apiPost<MealEntry>("/api/meals", {
         name: addName.trim() || "追加入力",
         kcal: Number(addKcal),
@@ -66,9 +60,7 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
       onMealAdd?.(meal);
       setAddName("");
       setAddKcal("");
-    } finally {
-      setAddSubmitting(false);
-    }
+    });
   }
 
   const { mealsByDate, consumedByDate, cumulative, daysWithData, progressKcal, targetKcal, dailyTarget } = useMemo(

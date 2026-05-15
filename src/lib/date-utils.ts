@@ -29,6 +29,20 @@ export function jstMonthsAgo(months: number): string {
   return d.toISOString().split("T")[0];
 }
 
+/** "HH:MM" 形式の入眠・起床から睡眠時間（時間）を計算。日をまたぐケースも対応 */
+export function parseSleepDuration(sleepTime: string, wakeTime: string): number | null {
+  const parse = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return isNaN(h) || isNaN(m) ? null : h * 60 + m;
+  };
+  const s = parse(sleepTime);
+  const w = parse(wakeTime);
+  if (s === null || w === null) return null;
+  let diff = w - s;
+  if (diff < 0) diff += 24 * 60;
+  return Math.round(diff / 6) / 10;
+}
+
 /** ISO日時文字列を MM/DD HH:MM 形式にフォーマット（テーブル日時表示用） */
 export function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleDateString("ja-JP", {

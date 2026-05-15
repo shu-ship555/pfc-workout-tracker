@@ -27,7 +27,7 @@ import { ChartTooltip } from "@/components/chart-tooltip";
 import { ScrollableChart } from "@/components/scrollable-chart";
 import { PFCSkeletonGrid } from "@/components/pfc-skeleton-grid";
 import { getMoodColorClass, getMoodDotClass, CHART_COLORS } from "@/lib/color-constants";
-import { formatLogDate, jstDaysAgo, normalizeDate } from "@/lib/date-utils";
+import { formatLogDate, jstDaysAgo, normalizeDate, parseSleepDuration } from "@/lib/date-utils";
 import { Moon, Sun, Cloud, Thermometer, Droplets, Footprints, MapPin, Smile, Flame, RefreshCw, User } from "lucide-react";
 import { apiGet, apiPatch } from "@/lib/api-client";
 
@@ -47,19 +47,6 @@ function MoodDots({ mood }: { mood: number }) {
   );
 }
 
-/** "HH:MM" 形式の入眠・起床から睡眠時間（時間）を計算。日をまたぐケースも対応 */
-function parseSleepDuration(sleepTime: string, wakeTime: string): number | null {
-  const parse = (t: string) => {
-    const [h, m] = t.split(":").map(Number);
-    return isNaN(h) || isNaN(m) ? null : h * 60 + m;
-  };
-  const s = parse(sleepTime);
-  const w = parse(wakeTime);
-  if (s === null || w === null) return null;
-  let diff = w - s;
-  if (diff < 0) diff += 24 * 60; // 日をまたぐ場合
-  return Math.round(diff / 6) / 10; // 小数点1桁の時間
-}
 
 const LOG_TOOLTIP_DEFS: { key: string; label: string; color: string; format: (v: number) => string }[] = [
   { key: "mood",    label: "気分",     color: CHART_COLORS.mood,    format: (v) => `${v} / 10` },
