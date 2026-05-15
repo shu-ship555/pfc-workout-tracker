@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/daily-summary",
-      "schedule": "30 14 * * *"
+      "path": "/api/daily-summary?source=cron",
+      "schedule": "0 21 * * *"
     }
   ]
 }

@@ -118,10 +118,9 @@ async function fitbitGet(path: string): Promise<unknown> {
   return res.json();
 }
 
-/** 今日のFitbitデータ（活動・睡眠）を取得する */
-export async function fetchTodayFitbit() {
-  // Fitbit API は "today" エイリアスを受け付けないため、JST の実日付を使用
-  const todayStr = jstToday();
+/** 指定日（デフォルト: JST今日）のFitbitデータ（活動・睡眠）を取得する */
+export async function fetchTodayFitbit(dateStr = jstToday()) {
+  const todayStr = dateStr;
 
   const [activitiesData, sleepData, weightData] = await Promise.all([
     fitbitGet(`/1/user/-/activities/date/${todayStr}.json`) as Promise<{

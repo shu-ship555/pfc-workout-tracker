@@ -316,10 +316,10 @@ export async function setDietGoal(goal: DietGoal): Promise<void> {
   ]);
 }
 
-/** 今日の日付で Notion lifelog を upsert する（あれば更新、なければ作成） */
-export async function upsertTodayLifeLog(data: LifeLogUpsertData): Promise<void> {
-  const jstNow = new Date(Date.now() + 9 * 3600_000);
-  const todayDisplay = jstNow.toISOString().slice(0, 10).replace(/-/g, "/"); // "YYYY/MM/DD"
+/** 指定日（デフォルト: JST今日）の Notion lifelog を upsert する（あれば更新、なければ作成） */
+export async function upsertTodayLifeLog(data: LifeLogUpsertData, dateStr?: string): Promise<void> {
+  const targetStr = dateStr ?? new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
+  const todayDisplay = targetStr.replace(/-/g, "/"); // "YYYY/MM/DD"
 
   const existing = await notion.databases.query({
     database_id: LIFELOG_DB,

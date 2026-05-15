@@ -2,15 +2,20 @@ import { NextResponse } from "next/server";
 import { fetchTodayWeather } from "@/lib/weather";
 import { fetchTodayFitbit, FitbitAuthError } from "@/lib/fitbit";
 import { upsertTodayLifeLog, listLifeLogs } from "@/lib/notion";
-import { jstToday } from "@/lib/date-utils";
+import { jstToday, jstDaysAgo } from "@/lib/date-utils";
 import { getShiftedDemoLifeLogs } from "@/lib/demo-data";
 import { IS_DEMO } from "@/lib/api-utils";
 
-export async function GET() {
+export async function GET(request: Request) {
   // デモモード: /api/lifelog と同じデータを返す
   if (IS_DEMO) {
     return NextResponse.json(getShiftedDemoLifeLogs(jstToday()));
   }
+
+  // cronからの呼び出し(?source=cron)は前日データを対象にする
+  // （デバイスが一晩同期する時間を確保するため）
+  const { searchParams } = new URL(request.url);
+  const targetDate = searchParams.get("source") === "cron" ? jstDaysAgo(1) : jstToday();
 
   const city = process.env.OPENWEATHER_CITY ?? "Tokyo";
 
@@ -20,7 +25,7 @@ export async function GET() {
       ? fetchTodayWeather(city, process.env.OPENWEATHER_API_KEY)
       : Promise.reject(new Error("OPENWEATHER_API_KEY not set")),
     process.env.NOTION_CONFIG_DATABASE_ID
-      ? fetchTodayFitbit()
+      ? fetchTodayFitbit(targetDate)
       : Promise.reject(new Error("NOTION_CONFIG_DATABASE_ID not set")),
   ]);
 
@@ -48,7 +53,7 @@ export async function GET() {
       sleepTime: fitbit?.sleepTime ?? "",
       wakeTime: fitbit?.wakeTime ?? "",
       weight: fitbit?.weight ?? null,
-    });
+    }, targetDate);
   } catch (err) {
     console.error("[daily-summary] Notion upsert failed:", err);
   }
