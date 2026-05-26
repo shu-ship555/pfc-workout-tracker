@@ -7,9 +7,9 @@ const eslintConfig = [
   {
     ignores: [".next/**", "out/**", "build/**", "next-env.d.ts"],
   },
-  // Notion API のレスポンスは動的プロパティアクセスのため any が必要
+  // 外部APIレスポンスは動的プロパティアクセスのため any が必要
   {
-    files: ["src/lib/notion.ts"],
+    files: ["src/lib/notion.ts", "src/lib/google-health.ts"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
     },

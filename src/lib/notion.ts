@@ -230,43 +230,42 @@ type LifeLogUpsertData = {
 
 // --- Config DB ---
 
-export async function getFitbitTokens(): Promise<{ accessToken: string; refreshToken: string }> {
+async function configUpsert(rows: any[], key: string, value: string): Promise<void> {
+  const existing = rows.find((r) => r.properties.Key?.title?.[0]?.plain_text === key);
+  if (existing) {
+    await notion.pages.update({
+      page_id: existing.id,
+      properties: { Value: { rich_text: [{ text: { content: value } }] } },
+    });
+  } else {
+    await notion.pages.create({
+      parent: { database_id: CONFIG_DB },
+      properties: {
+        Key: { title: [{ text: { content: key } }] },
+        Value: { rich_text: [{ text: { content: value } }] },
+      },
+    });
+  }
+}
+
+export async function getGoogleHealthTokens(): Promise<{ accessToken: string; refreshToken: string }> {
   const response = await notion.databases.query({ database_id: CONFIG_DB });
   const rows = response.results as any[];
   const getValue = (key: string) =>
     rows.find((r) => r.properties.Key?.title?.[0]?.plain_text === key)
       ?.properties.Value?.rich_text?.[0]?.plain_text ?? "";
   return {
-    accessToken: getValue("FITBIT_ACCESS_TOKEN"),
-    refreshToken: getValue("FITBIT_REFRESH_TOKEN"),
+    accessToken: getValue("GOOGLE_HEALTH_ACCESS_TOKEN"),
+    refreshToken: getValue("GOOGLE_HEALTH_REFRESH_TOKEN"),
   };
 }
 
-export async function setFitbitTokens(accessToken: string, refreshToken: string): Promise<void> {
+export async function setGoogleHealthTokens(accessToken: string, refreshToken: string): Promise<void> {
   const response = await notion.databases.query({ database_id: CONFIG_DB });
   const rows = response.results as any[];
-
-  const upsert = async (key: string, value: string) => {
-    const existing = rows.find((r) => r.properties.Key?.title?.[0]?.plain_text === key);
-    if (existing) {
-      await notion.pages.update({
-        page_id: existing.id,
-        properties: { Value: { rich_text: [{ text: { content: value } }] } },
-      });
-    } else {
-      await notion.pages.create({
-        parent: { database_id: CONFIG_DB },
-        properties: {
-          Key: { title: [{ text: { content: key } }] },
-          Value: { rich_text: [{ text: { content: value } }] },
-        },
-      });
-    }
-  };
-
   await Promise.all([
-    upsert("FITBIT_ACCESS_TOKEN", accessToken),
-    upsert("FITBIT_REFRESH_TOKEN", refreshToken),
+    configUpsert(rows, "GOOGLE_HEALTH_ACCESS_TOKEN", accessToken),
+    configUpsert(rows, "GOOGLE_HEALTH_REFRESH_TOKEN", refreshToken),
   ]);
 }
 

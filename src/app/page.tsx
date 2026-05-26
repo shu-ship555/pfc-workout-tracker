@@ -118,8 +118,8 @@ export default function Home() {
       return;
     }
     apiFetch("/api/daily-summary").then(async (res) => {
-      if (FEATURES.FITBIT_REAUTH && res.headers.get("x-fitbit-auth-error") === "1") {
-        appToast.error("Fitbit の再認証が必要です", {
+      if (FEATURES.FITBIT_REAUTH && res.headers.get("x-google-health-auth-error") === "1") {
+        appToast.error("Google Health の再認証が必要です", {
           description: "リフレッシュトークンが無効になっています",
         });
       }
@@ -276,7 +276,7 @@ export default function Home() {
                         setAuthOpen(true);
                       }}
                     >
-                      Fitbit 再認証
+                      Google Health 再認証
                     </Button>
                   )}
                 </div>
@@ -286,20 +286,20 @@ export default function Home() {
               <Dialog open={authOpen} onOpenChange={setAuthOpen}>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Fitbit 再認証</DialogTitle>
+                    <DialogTitle>Google Health 再認証</DialogTitle>
                   </DialogHeader>
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
                       const authWindow = window.open(
-                        `/api/fitbit/auth?secret=${encodeURIComponent(authSecret)}`,
+                        `/api/google-health/auth?secret=${encodeURIComponent(authSecret)}`,
                         "_blank",
                       );
                       setAuthOpen(false);
                       setAuthSecret("");
                       if (authWindow) {
                         const handleMessage = (event: MessageEvent) => {
-                          if (event.data?.type === "fitbit-auth-complete") {
+                          if (event.data?.type === "google-health-auth-complete") {
                             window.removeEventListener("message", handleMessage);
                             location.reload();
                           }
@@ -310,9 +310,9 @@ export default function Home() {
                     className="space-y-4"
                   >
                     <div className="space-y-2">
-                      <Label htmlFor="fitbit-auth-secret">シークレット</Label>
+                      <Label htmlFor="google-health-auth-secret">シークレット</Label>
                       <Input
-                        id="fitbit-auth-secret"
+                        id="google-health-auth-secret"
                         type="password"
                         value={authSecret}
                         onChange={(e) => setAuthSecret(e.target.value)}
@@ -320,7 +320,7 @@ export default function Home() {
                         autoFocus
                       />
                       <p className="text-xs text-muted-foreground">
-                        FITBIT_AUTH_SECRET を入力してください
+                        GOOGLE_HEALTH_AUTH_SECRET を入力してください
                       </p>
                     </div>
                     <div className="flex justify-end gap-2">

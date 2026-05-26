@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchTodayWeather } from "@/lib/weather";
-import { fetchTodayFitbit, FitbitAuthError } from "@/lib/fitbit";
+import { fetchTodayGoogleHealth, GoogleHealthAuthError } from "@/lib/google-health";
 import { upsertTodayLifeLog, listLifeLogs } from "@/lib/notion";
 import { jstToday, jstDaysAgo } from "@/lib/date-utils";
 import { getShiftedDemoLifeLogs } from "@/lib/demo-data";
@@ -19,25 +19,25 @@ export async function GET(request: Request) {
 
   const city = process.env.OPENWEATHER_CITY ?? "Tokyo";
 
-  // 天気・Fitbit を並列取得。片方が失敗しても続行
-  const [weatherResult, fitbitResult] = await Promise.allSettled([
+  // 天気・Google Health を並列取得。片方が失敗しても続行
+  const [weatherResult, googleHealthResult] = await Promise.allSettled([
     process.env.OPENWEATHER_API_KEY
       ? fetchTodayWeather(city, process.env.OPENWEATHER_API_KEY)
       : Promise.reject(new Error("OPENWEATHER_API_KEY not set")),
     process.env.NOTION_CONFIG_DATABASE_ID
-      ? fetchTodayFitbit(targetDate)
+      ? fetchTodayGoogleHealth(targetDate)
       : Promise.reject(new Error("NOTION_CONFIG_DATABASE_ID not set")),
   ]);
 
   if (weatherResult.status === "rejected") {
     console.error("[daily-summary] Weather fetch failed:", weatherResult.reason);
   }
-  if (fitbitResult.status === "rejected") {
-    console.error("[daily-summary] Fitbit fetch failed:", fitbitResult.reason);
+  if (googleHealthResult.status === "rejected") {
+    console.error("[daily-summary] Google Health fetch failed:", googleHealthResult.reason);
   }
 
   const weather = weatherResult.status === "fulfilled" ? weatherResult.value : null;
-  const fitbit = fitbitResult.status === "fulfilled" ? fitbitResult.value : null;
+  const fitbit = googleHealthResult.status === "fulfilled" ? googleHealthResult.value : null;
 
   // Notion に upsert（失敗してもデータは返す）
   try {
@@ -60,8 +60,8 @@ export async function GET(request: Request) {
 
   const logs = await listLifeLogs();
   const headers: Record<string, string> = {};
-  if (fitbitResult.status === "rejected" && fitbitResult.reason instanceof FitbitAuthError) {
-    headers["x-fitbit-auth-error"] = "1";
+  if (googleHealthResult.status === "rejected" && googleHealthResult.reason instanceof GoogleHealthAuthError) {
+    headers["x-google-health-auth-error"] = "1";
   }
   return NextResponse.json(logs, { headers });
 }
