@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { getDietGoal, setDietGoal } from "@/lib/notion";
 import type { DietGoal } from "@/lib/types";
-
-const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-const DEMO_GOAL: DietGoal = { type: "lose", targetKg: 3, startDate: "2026-04-01", endDate: "2026-06-30" };
+import { IS_DEMO } from "@/lib/api-utils";
+import { DEMO_GOAL } from "@/lib/demo-data";
 
 export async function GET() {
   if (IS_DEMO) return NextResponse.json(DEMO_GOAL);

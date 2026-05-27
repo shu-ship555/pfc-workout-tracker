@@ -63,3 +63,13 @@ export type DietGoal = {
 };
 
 export const KCAL_PER_KG = 7500;
+
+export const PFC_LABELS: Record<keyof PFCValues, string> = {
+  kcal: "kcal", protein: "P", fat: "F", carb: "C",
+};
+
+export const PFC_INPUT_LABELS: Record<keyof PFCValues, string> = {
+  kcal: "kcal", protein: "P(g)", fat: "F(g)", carb: "C(g)",
+};
+
+export const DEFAULT_DIET_GOAL: DietGoal = { type: "lose", targetKg: 3, startDate: "", endDate: "" };

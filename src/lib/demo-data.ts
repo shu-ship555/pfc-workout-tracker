@@ -1,6 +1,8 @@
-import type { WorkoutEntry, MealEntry, LifeLogEntry } from "./types";
+import type { WorkoutEntry, MealEntry, LifeLogEntry, DietGoal } from "./types";
 import type { MealAnalysis } from "./gemini";
 import { shiftDateStr } from "./date-utils";
+
+export const DEMO_GOAL: DietGoal = { type: "lose", targetKg: 3, startDate: "2026-04-01", endDate: "2026-06-30" };
 
 // 5部位 × 1種目 × 週1回 × 8週間分（ウォームアップ1 + ワーキングセット3）
 // 月:胸/ベンチプレス 火:背中/ラットプルダウン 水:脚/スクワット 木:肩/ショルダープレス 金:腕/バイセップカール

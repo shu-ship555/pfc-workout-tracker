@@ -22,8 +22,6 @@ const PERIODS: { value: Period; label: string }[] = [
 ];
 
 
-type EditData = MealLike;
-
 type Props = {
   meals: MealEntry[];
   lifeLogs: LifeLogEntry[];
@@ -38,7 +36,7 @@ export function PFCSummary({ meals, lifeLogs, loading, onMealDelete, onMealUpdat
   const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
   const [showList, setShowList] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState<EditData | null>(null);
+  const [editData, setEditData] = useState<MealLike | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 

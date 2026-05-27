@@ -3,10 +3,7 @@ import { unstable_cache } from "next/cache";
 import { listWorkouts, listMeals, getDietGoal } from "@/lib/notion";
 import { jstToday, jstMonthsAgo } from "@/lib/date-utils";
 import { IS_DEMO } from "@/lib/api-utils";
-import { getShiftedDemoWorkouts, getShiftedDemoMeals } from "@/lib/demo-data";
-import type { DietGoal } from "@/lib/types";
-
-const DEMO_GOAL: DietGoal = { type: "lose", targetKg: 3, startDate: "2026-04-01", endDate: "2026-06-30" };
+import { getShiftedDemoWorkouts, getShiftedDemoMeals, DEMO_GOAL } from "@/lib/demo-data";
 
 const getCachedInit = unstable_cache(
   async (since: string) => {

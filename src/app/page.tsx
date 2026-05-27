@@ -30,6 +30,7 @@ import { MealForm } from "@/components/meal-form";
 import { ActionButtons } from "@/components/action-buttons";
 import { DietCalendar } from "@/components/diet-calendar";
 import type { WorkoutEntry, WorkoutFormData, MealEntry, LifeLogEntry, DietGoal } from "@/lib/types";
+import { DEFAULT_DIET_GOAL } from "@/lib/types";
 
 type InitData = { workouts: WorkoutEntry[]; meals: MealEntry[]; dietGoal: DietGoal };
 import { DEMO_BANNER } from "@/lib/color-constants";
@@ -64,10 +65,10 @@ export default function Home() {
   const [formKey, setFormKey] = useState(0);
   const [pendingFormData, setPendingFormData] = useState<WorkoutFormData | null>(null);
   const [addedCount, setAddedCount] = useState(0);
-  const [dietGoal, setDietGoal] = useState<DietGoal>({ type: "lose", targetKg: 3, startDate: "", endDate: "" });
+  const [dietGoal, setDietGoal] = useState<DietGoal>(DEFAULT_DIET_GOAL);
   const [allDataLoaded, setAllDataLoaded] = useState(false);
   const [dietSettingsOpen, setDietSettingsOpen] = useState(false);
-  const [draftGoal, setDraftGoal] = useState<DietGoal>({ type: "lose", targetKg: 3, startDate: "", endDate: "" });
+  const [draftGoal, setDraftGoal] = useState<DietGoal>(DEFAULT_DIET_GOAL);
   const [savingDietGoal, setSavingDietGoal] = useState(false);
   const [dietCalendarVisible, setDietCalendarVisible] = useState(() => {
     return safeLocalStorage.get("diet-calendar-visible", "true") !== "false";

@@ -1,9 +1,5 @@
 import { Input } from "@/components/ui/input";
-import { PFC_KEYS, type PFCValues } from "@/lib/types";
-
-const LABELS: Record<keyof PFCValues, string> = {
-  kcal: "kcal", protein: "P(g)", fat: "F(g)", carb: "C(g)",
-};
+import { PFC_KEYS, PFC_INPUT_LABELS, type PFCValues } from "@/lib/types";
 
 type Props = {
   values: PFCValues;
@@ -22,7 +18,7 @@ export function PFCInputGrid({
     <div className="grid grid-cols-4 gap-1.5">
       {PFC_KEYS.map((key) => (
         <div key={key} className="space-y-0.5">
-          <p className={labelClassName}>{LABELS[key]}</p>
+          <p className={labelClassName}>{PFC_INPUT_LABELS[key]}</p>
           <Input
             type="number"
             min={0}
