@@ -152,18 +152,11 @@ function toMs(t: unknown): number | null {
   return null;
 }
 
-/** dailyRollUp レスポンスから数値を取り出す（型が不明なため複数フィールドを試みる） */
-function extractRollUpValue(data: unknown): number | null {
-  const val = (data as any)?.dataPointRollUps?.[0]?.value;
-  if (!val) return null;
-  const raw = val.integerValue ?? val.int64Value ?? val.intValue ?? val.fpValue ?? val.doubleValue ?? null;
-  return raw !== null ? Number(raw) : null;
-}
-
 /** 指定日（デフォルト: JST今日）の Google Health データを取得する */
 export async function fetchTodayGoogleHealth(dateStr = jstToday()) {
   const date = parseDate(dateStr);
-  const nextDateStr = new Date(new Date(dateStr + "T00:00:00+09:00").getTime() + 86400000)
+  // UTC で翌日を計算（JST オフセット変換を避ける）
+  const nextDateStr = new Date(Date.UTC(date.year, date.month - 1, date.day + 1))
     .toISOString()
     .slice(0, 10);
   const nextDate = parseDate(nextDateStr);
@@ -172,71 +165,69 @@ export async function fetchTodayGoogleHealth(dateStr = jstToday()) {
   const [stepsResult, caloriesResult, sleepResult, weightResult] = await Promise.allSettled([
     healthPost("/v4/users/me/dataTypes/steps/dataPoints:dailyRollUp", { range }),
     healthPost("/v4/users/me/dataTypes/total-calories/dataPoints:dailyRollUp", { range }),
-    // 睡眠は個別セッションが必要なため list エンドポイントを使用
     healthGet("/v4/users/me/dataTypes/sleep/dataPoints?pageSize=5"),
     healthPost("/v4/users/me/dataTypes/weight/dataPoints:dailyRollUp", { range }),
   ]);
 
-  // Steps
-  const steps: number | null = stepsResult.status === "fulfilled"
-    ? extractRollUpValue(stepsResult.value)
+  // Steps: rollupDataPoints[0].steps.countSum
+  const stepsRaw = (stepsResult.status === "fulfilled" ? stepsResult.value : null) as any;
+  const steps: number | null = stepsRaw?.rollupDataPoints?.[0]?.steps?.countSum != null
+    ? Number(stepsRaw.rollupDataPoints[0].steps.countSum)
     : null;
 
-  // 消費カロリー
-  let consumedKcal: number | null = caloriesResult.status === "fulfilled"
-    ? extractRollUpValue(caloriesResult.value)
+  // 消費カロリー: rollupDataPoints[0].totalCalories.kcalSum
+  const calRaw = (caloriesResult.status === "fulfilled" ? caloriesResult.value : null) as any;
+  const consumedKcal: number | null = calRaw?.rollupDataPoints?.[0]?.totalCalories?.kcalSum != null
+    ? Math.round(calRaw.rollupDataPoints[0].totalCalories.kcalSum)
     : null;
-  if (consumedKcal !== null) consumedKcal = Math.round(consumedKcal);
 
-  // 睡眠: 対象日JST内に終わるセッションを探す、なければ直近を使用
+  // 睡眠: dataPoints[n].sleep.interval.startTime/endTime (UTC RFC3339)
   let sleepHours: number | null = null;
   let sleepTime = "";
   let wakeTime = "";
   if (sleepResult.status === "fulfilled") {
     const sessions: any[] = (sleepResult.value as any)?.dataPoints ?? [];
 
-    // 対象日 JST の00:00〜23:59 の ms 範囲
+    // 対象日 JST の 00:00〜23:59 に endTime が収まるセッションを探す
     const dayStart = new Date(dateStr + "T00:00:00+09:00").getTime();
     const dayEnd   = new Date(dateStr + "T23:59:59+09:00").getTime();
 
     const daySession = sessions.find((s) => {
-      const endMs = toMs(s.endTime);
+      const endMs = toMs(s.sleep?.interval?.endTime);
       return endMs !== null && endMs >= dayStart && endMs <= dayEnd;
     });
     const mainSleep = daySession ?? sessions[0] ?? null;
 
-    if (mainSleep) {
-      const startMs = toMs(mainSleep.startTime);
-      const endMs   = toMs(mainSleep.endTime);
+    if (mainSleep?.sleep?.interval) {
+      const startMs = toMs(mainSleep.sleep.interval.startTime);
+      const endMs   = toMs(mainSleep.sleep.interval.endTime);
       if (startMs !== null && endMs !== null) {
-        // JST でのHH:MM を算出
         const toJstHHMM = (ms: number) =>
           new Date(ms + 9 * 3600 * 1000).toISOString().slice(11, 16);
         sleepTime  = toJstHHMM(startMs);
         wakeTime   = toJstHHMM(endMs);
-        sleepHours = Math.round((endMs - startMs) / 60000 / 6) / 10; // 0.1時間単位
+        sleepHours = Math.round((endMs - startMs) / 60000 / 6) / 10;
       }
     }
   }
 
-  // 体重: 当日データがなければ直近30日の最新を使用
-  let weight: number | null = weightResult.status === "fulfilled"
-    ? extractRollUpValue(weightResult.value)
-    : null;
+  // 体重: rollupDataPoints[0].weight.weightGramsAvg (g → kg)
+  const weightRaw = (weightResult.status === "fulfilled" ? weightResult.value : null) as any;
+  const weightGrams = weightRaw?.rollupDataPoints?.[0]?.weight?.weightGramsAvg;
+  // g → kg (小数1桁: 100g単位で丸める)
+  const gramsToKg = (g: number) => Math.round(g / 100) / 10;
+  let weight: number | null = weightGrams != null ? gramsToKg(weightGrams) : null;
 
+  // 当日データがなければ直近30日の最新を使用
   if (weight === null) {
     try {
       const pastStart = parseDate(jstDaysAgo(30));
       const rangeData = await healthPost("/v4/users/me/dataTypes/weight/dataPoints:dailyRollUp", {
         range: { start: { date: pastStart }, end: { date: nextDate } },
       }) as any;
-      const rollUps: any[] = rangeData?.dataPointRollUps ?? [];
-      // 最後（最新日）のデータを使用
-      for (let i = rollUps.length - 1; i >= 0; i--) {
-        const val = rollUps[i]?.value;
-        const raw = val?.fpValue ?? val?.doubleValue ?? null;
-        if (raw !== null) { weight = Number(raw); break; }
-      }
+      const rollUps: any[] = rangeData?.rollupDataPoints ?? [];
+      const lastGrams = rollUps.at(-1)?.weight?.weightGramsAvg;
+      if (lastGrams != null) weight = gramsToKg(lastGrams);
     } catch {
       // フォールバック失敗は無視
     }
