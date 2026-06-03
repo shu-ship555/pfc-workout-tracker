@@ -133,7 +133,10 @@ async function healthPost(path: string, body: unknown): Promise<unknown> {
     res = await request(newToken);
   }
 
-  if (!res.ok) throw new Error(`Google Health API error ${res.status}: ${path}`);
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => "");
+    throw new Error(`Google Health API error ${res.status}: ${path} — ${errBody}`);
+  }
   return res.json();
 }
 
@@ -161,22 +164,33 @@ export async function fetchTodayGoogleHealth(dateStr = jstToday()) {
     .slice(0, 10);
   const nextDate = parseDate(nextDateStr);
   const range = { start: { date }, end: { date: nextDate } };
+  // window_size_days: 1 は dailyRollUp に必須（Google Health API 仕様）
+  const rollUpBody = { range, window_size_days: 1 };
 
   const [stepsResult, caloriesResult, sleepResult, weightResult] = await Promise.allSettled([
-    healthPost("/v4/users/me/dataTypes/steps/dataPoints:dailyRollUp", { range }),
-    healthPost("/v4/users/me/dataTypes/total-calories/dataPoints:dailyRollUp", { range }),
+    healthPost("/v4/users/me/dataTypes/steps/dataPoints:dailyRollUp", rollUpBody),
+    healthPost("/v4/users/me/dataTypes/total-calories/dataPoints:dailyRollUp", rollUpBody),
     healthGet("/v4/users/me/dataTypes/sleep/dataPoints?pageSize=5"),
-    healthPost("/v4/users/me/dataTypes/weight/dataPoints:dailyRollUp", { range }),
+    healthPost("/v4/users/me/dataTypes/weight/dataPoints:dailyRollUp", rollUpBody),
   ]);
+
+  // 認証エラーは上位に伝播させて再認証フローを起動する
+  for (const result of [stepsResult, caloriesResult, sleepResult, weightResult]) {
+    if (result.status === "rejected" && result.reason instanceof GoogleHealthAuthError) {
+      throw result.reason;
+    }
+  }
 
   // Steps: rollupDataPoints[0].steps.countSum
   const stepsRaw = (stepsResult.status === "fulfilled" ? stepsResult.value : null) as any;
+  if (stepsResult.status === "rejected") console.error("[google-health] steps error:", stepsResult.reason);
   const steps: number | null = stepsRaw?.rollupDataPoints?.[0]?.steps?.countSum != null
     ? Number(stepsRaw.rollupDataPoints[0].steps.countSum)
     : null;
 
   // 消費カロリー: rollupDataPoints[0].totalCalories.kcalSum
   const calRaw = (caloriesResult.status === "fulfilled" ? caloriesResult.value : null) as any;
+  if (caloriesResult.status === "rejected") console.error("[google-health] calories error:", caloriesResult.reason);
   const consumedKcal: number | null = calRaw?.rollupDataPoints?.[0]?.totalCalories?.kcalSum != null
     ? Math.round(calRaw.rollupDataPoints[0].totalCalories.kcalSum)
     : null;
