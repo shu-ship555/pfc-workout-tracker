@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Calendar, Settings } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Settings, Pencil, Check, X } from "lucide-react";
 import type { MealEntry, LifeLogEntry, DietGoal } from "@/lib/types";
 import { KCAL_PER_KG } from "@/lib/types";
-import { apiPost } from "@/lib/api-client";
+import { apiPost, apiPatch } from "@/lib/api-client";
 import { PFC_COLORS } from "@/lib/color-constants";
 import { normalizeDate, jstToday, jstNow } from "@/lib/date-utils";
 import { calcDietProgress, formatBalance } from "@/lib/diet";
@@ -30,20 +30,26 @@ type Props = {
   loading?: boolean;
   onSettingsOpen?: () => void;
   onMealAdd?: (meal: MealEntry) => void;
+  onLifeLogUpdate?: (id: string, consumedKcal: number) => void;
 };
 
-export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, onMealAdd }: Props) {
+export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, onMealAdd, onLifeLogUpdate }: Props) {
   const todayStr = jstToday();
   const [viewYear, setViewYear] = useState(() => parseInt(todayStr.slice(0, 4)));
   const [viewMonth, setViewMonth] = useState(() => parseInt(todayStr.slice(5, 7)) - 1);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [addName, setAddName] = useState("");
   const [addKcal, setAddKcal] = useState("");
+  const [editingConsumed, setEditingConsumed] = useState(false);
+  const [editConsumedKcal, setEditConsumedKcal] = useState("");
   const { isPending: addSubmitting, run } = useAsyncAction();
+  const { isPending: consumedSubmitting, run: runConsumedUpdate } = useAsyncAction();
 
   useEffect(() => {
     setAddName("");
     setAddKcal("");
+    setEditingConsumed(false);
+    setEditConsumedKcal("");
   }, [selectedDate]);
 
   async function handleAdd() {
@@ -60,6 +66,17 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
       onMealAdd?.(meal);
       setAddName("");
       setAddKcal("");
+    });
+  }
+
+  async function handleConsumedUpdate(logId: string) {
+    const kcal = Number(editConsumedKcal);
+    if (!kcal || kcal <= 0) return;
+    await runConsumedUpdate(async () => {
+      await apiPatch(`/api/lifelog/${logId}`, { consumedKcal: kcal });
+      onLifeLogUpdate?.(logId, kcal);
+      setEditingConsumed(false);
+      setEditConsumedKcal("");
     });
   }
 
@@ -320,6 +337,9 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
         const totalFat = dayMeals.reduce((s, m) => s + m.fat, 0);
         const totalCarb = dayMeals.reduce((s, m) => s + m.carb, 0);
         const { consumed } = selectedDate ? getDayBalance(selectedDate) : { consumed: null };
+        const selectedLog = selectedDate
+          ? lifeLogs.find((l) => normalizeDate(l.date).slice(0, 10) === selectedDate) ?? null
+          : null;
         const [_y, mo, d] = (selectedDate ?? "").split("-");
 
         return (
@@ -350,13 +370,76 @@ export function DietCalendar({ meals, lifeLogs, goal, loading, onSettingsOpen, o
               </div>
 
               {/* 消費カロリーとの比較 */}
-              {consumed != null && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                  <span>消費カロリー <span className="font-mono text-foreground">{consumed.toLocaleString()} kcal</span></span>
-                  <span>|</span>
-                  <span>収支 <span className={`font-mono font-medium ${totalKcal < consumed ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-                    {totalKcal < consumed ? "-" : "+"}{Math.abs(totalKcal - consumed).toLocaleString()} kcal
-                  </span></span>
+              {(consumed != null || selectedLog != null) && (
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground shrink-0">
+                  {editingConsumed ? (
+                    <>
+                      <span>消費カロリー</span>
+                      <Input
+                        type="number"
+                        value={editConsumedKcal}
+                        onChange={(e) => setEditConsumedKcal(e.target.value)}
+                        className="h-6 text-xs w-24 inline-flex"
+                        min={1}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && selectedLog) handleConsumedUpdate(selectedLog.id);
+                          if (e.key === "Escape") { setEditingConsumed(false); setEditConsumedKcal(""); }
+                        }}
+                      />
+                      <span>kcal</span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        disabled={!editConsumedKcal || consumedSubmitting}
+                        onClick={() => selectedLog && handleConsumedUpdate(selectedLog.id)}
+                      >
+                        <Check className="h-3.5 w-3.5 text-green-600" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => { setEditingConsumed(false); setEditConsumedKcal(""); }}
+                      >
+                        <X className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <span>
+                        消費カロリー{" "}
+                        <span className="font-mono text-foreground">
+                          {consumed != null ? `${consumed.toLocaleString()} kcal` : "未取得"}
+                        </span>
+                      </span>
+                      {selectedLog && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5"
+                          onClick={() => {
+                            setEditConsumedKcal(consumed != null ? String(consumed) : "");
+                            setEditingConsumed(true);
+                          }}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      )}
+                      {consumed != null && (
+                        <>
+                          <span>|</span>
+                          <span>
+                            収支{" "}
+                            <span className={`font-mono font-medium ${totalKcal < consumed ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                              {totalKcal < consumed ? "-" : "+"}{Math.abs(totalKcal - consumed).toLocaleString()} kcal
+                            </span>
+                          </span>
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
 

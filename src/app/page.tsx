@@ -432,7 +432,7 @@ export default function Home() {
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-5 pb-24 sm:pb-6 space-y-6">
         <PFCSummary meals={meals} lifeLogs={lifeLogs} loading={loading} onMealDelete={removeMeal} onMealUpdate={updateMeal} dietGoal={dietGoal} />
 
-        {dietCalendarVisible && <DietCalendar meals={meals} lifeLogs={lifeLogs} goal={dietGoal} loading={loading} onSettingsOpen={openDietSettings} onMealAdd={addMeal} />}
+        {dietCalendarVisible && <DietCalendar meals={meals} lifeLogs={lifeLogs} goal={dietGoal} loading={loading} onSettingsOpen={openDietSettings} onMealAdd={addMeal} onLifeLogUpdate={(id, consumedKcal) => setLifeLogs((prev) => prev.map((l) => l.id === id ? { ...l, consumedKcal } : l))} />}
 
         {FEATURES.LIFELOG && (
           <>

@@ -214,6 +214,15 @@ export async function updateLifeLogMood(id: string, moodSelect: string): Promise
   });
 }
 
+export async function updateLifeLogConsumedKcal(id: string, consumedKcal: number): Promise<void> {
+  await notion.pages.update({
+    page_id: id,
+    properties: {
+      消費カロリー: { number: consumedKcal },
+    },
+  });
+}
+
 type LifeLogUpsertData = {
   city: string;
   weather: string;
